@@ -1,0 +1,10 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "taskName": "Build",
+            "type": "shell",
+            "command": "${workspaceRoot}/go build main.go"
+        }
+    ]
+}
