@@ -1,2 +1,3 @@
 .go/
-debug
+src/debug
+src/darch

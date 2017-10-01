@@ -8,7 +8,7 @@ import (
 	"./commands/pull"
 	"./commands/push"
 	"./commands/stage"
-	"github.com/urfave/cli" // imports as package "cli"
+	"github.com/urfave/cli"
 )
 
 func main() {
