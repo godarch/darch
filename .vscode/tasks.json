@@ -4,7 +4,7 @@
         {
             "taskName": "Build",
             "type": "shell",
-            "command": "${workspaceRoot}/go build main.go"
+            "command": "${workspaceRoot}/go build src/main.go"
         }
     ]
 }
