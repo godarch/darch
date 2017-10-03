@@ -12,10 +12,10 @@
             "env":{
                 "GOPATH": "${workspaceRoot}/.go"
             },
+            "cwd": "./",
             "args": [
-                "build"
             ],
-            "program": "${workspaceRoot}/src/main.go"
+            "program": "${workspaceRoot}/darch.go"
         }
     ]
 }

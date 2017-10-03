@@ -3,7 +3,7 @@
 SHELL := /bin/bash
 PWD    = $(shell pwd)
 
-PKG  = ./src # $(dir $(wildcard ./*)) # uncomment for implicit submodules
+PKG  = . # $(dir $(wildcard ./*)) # uncomment for implicit submodules
 BIN  = darch
 GO  := $(realpath ./go)
 
@@ -18,7 +18,11 @@ default: test
 
 all: build
 build: deps
-	$(GO) build -o src/darch $(PKG)
+	$(GO) build -o darch $(PKG)
+lint: vet
+vet: deps
+	$(GO) get code.google.com/p/go.tools/cmd/vet
+	$(GO) vet $(PKG)
 fmt:
 	$(GO) fmt $(PKG)
 test: test-deps
@@ -36,4 +40,4 @@ test-deps: deps
 	$(GO) get -d -t $(PKG)
 	$(GO) test -i $(PKG)
 run: all
-	./src/$(BIN) ${ARGS}
+	./$(BIN)
