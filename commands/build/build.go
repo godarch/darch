@@ -32,10 +32,14 @@ func build(imageName string, imageDir string) error {
 	imageDefinition, err := images.BuildDefinition(imageName, imageDir)
 
 	if err != nil {
-		return cli.NewExitError(err, 2)
+		return cli.NewExitError(err, 1)
 	}
 
-	log.Println(imageDefinition.Name)
+	err = images.BuildImageLayer(imageDefinition)
+
+	if err != nil {
+		return cli.NewExitError(err, 1)
+	}
 
 	return nil
 }

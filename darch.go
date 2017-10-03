@@ -28,13 +28,25 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "darch"
 	app.Usage = "A tool used to build, boot and share stateless Arch images."
-
+	app.Version = Version
 	app.Commands = []cli.Command{
 		build.Command(),
 		extract.Command(),
 		stage.Command(),
 		pull.Command(),
 		push.Command(),
+		cli.Command{
+			Name:  "version",
+			Usage: "Print version information about darch.",
+			Action: func(c *cli.Context) error {
+				fmt.Printf("version %s\n", Version)
+				fmt.Printf("commit %s\n", GitCommit)
+				if len(Version) > 0 {
+					fmt.Printf("VersionPrerelease %s\n", VersionPrerelease)
+				}
+				return nil
+			},
+		},
 	}
 
 	app.Run(os.Args)

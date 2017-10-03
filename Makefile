@@ -3,7 +3,7 @@
 SHELL := /bin/bash
 PWD    = $(shell pwd)
 
-PKG  = . # $(dir $(wildcard ./*)) # uncomment for implicit submodules
+PKG  = .
 BIN  = darch
 GO  := $(realpath ./go)
 
@@ -11,33 +11,39 @@ FIND_STD_DEPS = $(GO) list std | sort | uniq
 FIND_PKG_DEPS = $(GO) list -f '{{join .Deps "\n"}}' $(PKG) | sort | uniq | grep -v "^_"
 DEPS          = $(shell comm -23 <($(FIND_PKG_DEPS)) <($(FIND_STD_DEPS)))
 
+VERSION := $(shell grep "const Version " version.go | sed -E 's/.*"(.+)"$$/\1/')
+GIT_COMMIT=$(shell git rev-parse HEAD)
+GIT_DIRTY=$(shell test -n "`git status --porcelain`" && echo "+CHANGES" || true)
 
 .PHONY: %
 
 default: test
 
+help:
+	@echo 'Make commands for darch:'
+	@echo
+	@echo 'Usage:'
+	@echo '    make build				Compile the project.'
+	@echo '    make clean				Clean the directory tree.'
+	@echo '    make deps				Install all the dependencies for the project.'
+	@echo '    make test				Run test tests.'
+	@echo '    make test-deps			Install all the dependencies for the tests.'
+	@echo '    make run				Run the program. Use ARGS to pass in arguments.'
+	@echo
+
 all: build
 build: deps
-	$(GO) build -o darch $(PKG)
-lint: vet
-vet: deps
-	$(GO) get code.google.com/p/go.tools/cmd/vet
-	$(GO) vet $(PKG)
-fmt:
-	$(GO) fmt $(PKG)
-test: test-deps
-	$(GO) test $(PKG)
-cover: test-deps
-	$(GO) test -cover $(PKG)
+	$(GO) build -ldflags "-X main.GitCommit=${GIT_COMMIT}${GIT_DIRTY} -X main.VersionPrerelease=DEV" -o bin/${BIN}
 clean:
 	$(GO) clean -i $(PKG)
-clean-all:
-	$(GO) clean -i -r $(PKG)
+	rm -r bin/
 deps:
 	$(GO) get -d $(PKG)
 	$(GO) install $(DEPS)
+test: test-deps
+	$(GO) test $(PKG)
 test-deps: deps
 	$(GO) get -d -t $(PKG)
 	$(GO) test -i $(PKG)
 run: all
-	./$(BIN)
+	./bin/$(BIN) ${ARGS}
