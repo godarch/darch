@@ -2,6 +2,7 @@ package build
 
 import (
 	"log"
+	"strings"
 
 	"../../images"
 	"github.com/urfave/cli"
@@ -18,14 +19,18 @@ func Command() cli.Command {
 				Name:  "imageDir",
 				Value: ".",
 			},
+			cli.StringFlag{
+				Name:  "tags",
+				Value: "local",
+			},
 		},
 		Action: func(c *cli.Context) error {
-			return build(c.Args().First(), c.String("imageDir"))
+			return build(c.Args().First(), c.String("imageDir"), strings.Split(c.String("tags"), ","))
 		},
 	}
 }
 
-func build(imageName string, imageDir string) error {
+func build(imageName string, imageDir string, flags []string) error {
 	log.Println("Image directory: " + imageDir)
 	log.Println("Image name: " + imageName)
 
@@ -35,7 +40,8 @@ func build(imageName string, imageDir string) error {
 		return cli.NewExitError(err, 1)
 	}
 
-	err = images.BuildImageLayer(imageDefinition)
+	err = images.BuildImageLayer(imageDefinition,
+		flags)
 
 	if err != nil {
 		return cli.NewExitError(err, 1)
