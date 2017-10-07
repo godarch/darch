@@ -1,9 +1,10 @@
 package extract
 
 import (
-	"fmt"
 	"log"
+	"path"
 
+	"../../images"
 	"github.com/urfave/cli"
 )
 
@@ -15,30 +16,41 @@ func Command() cli.Command {
 		UsageText: "darch extract [options] [image]",
 		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name:  "imageDir",
+				Name:  "imagesDir",
 				Value: ".",
 			},
 			cli.StringFlag{
 				Name:  "tag",
-				Value: "latest",
+				Value: "local",
+			},
+			cli.StringFlag{
+				Name: "destination",
 			},
 		},
 		Action: func(c *cli.Context) error {
-			fmt.Println("Extracting...")
-			return nil
+			return extract(c.Args().First(), c.String("imagesDir"), c.String("tag"), c.String("destination"))
 		},
 	}
 }
 
-func extract(imageName string, imageDir string, flags []string) error {
-	log.Println("Image directory: " + imageDir)
+func extract(imageName string, imagesDir string, tag string, destination string) error {
+	log.Println("Images directory: " + imagesDir)
 	log.Println("Image name: " + imageName)
+	log.Println("Tag: " + tag)
 
-	// imageDefinition, err := images.BuildDefinition(imageName, imageDir)
+	imageDefinition, err := images.BuildDefinition(imageName, imagesDir)
 
-	// if err != nil {
-	// 	return cli.NewExitError(err, 1)
-	// }
+	if err != nil {
+		return cli.NewExitError(err, 1)
+	}
+
+	if len(destination) == 0 {
+		destination = path.Join(imageDefinition.ImagesDir, ".extracted", imageDefinition.Name+"-"+tag)
+	}
+
+	log.Println("Destination: " + destination)
+
+	images.ExtractImage(imageDefinition, tag, destination)
 
 	return nil
 }

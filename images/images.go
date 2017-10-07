@@ -135,6 +135,65 @@ func BuildImageLayer(imageDefinition *ImageDefinition, tags []string) error {
 	return nil
 }
 
+// ExtractImage Extracts an image (with tag) to a specified directory
+func ExtractImage(imageDefinition *ImageDefinition, tag string, destination string) error {
+	tmpImageName := "darch-extracting-" + imageDefinition.Name
+
+	imageName := imageDefinition.Name
+	if len(tag) > 0 {
+		imageName = imageName + ":" + tag
+	}
+
+	err := runCommand("docker", "run", "-d", "--privileged", "--name", tmpImageName, imageName)
+	if err != nil {
+		return err
+	}
+
+	if !utils.DirectoryExists(destination) {
+		err = os.MkdirAll(destination, os.ModePerm)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = utils.CleanDirectory(destination)
+	if err != nil {
+		return err
+	}
+
+	err = runCommand("docker", "exec", tmpImageName, "mksquashfs", "root.x86_64", "/rootfs.squash")
+	if err != nil {
+		return err
+	}
+
+	err = runCommand("docker", "cp", tmpImageName+":/rootfs.squash", path.Join(destination, "rootfs.squash"))
+	if err != nil {
+		return err
+	}
+
+	err = runCommand("docker", "cp", tmpImageName+":/root.x86_64/boot/vmlinuz-linux", path.Join(destination, "vmlinuz-linux"))
+	if err != nil {
+		return err
+	}
+
+	err = runCommand("docker", "cp", tmpImageName+":/root.x86_64/boot/initramfs-linux.img", path.Join(destination, "initramfs-linux.img"))
+	if err != nil {
+		return err
+	}
+
+	err = runCommand("docker", "stop", tmpImageName)
+	if err != nil {
+		return err
+	}
+
+	err = runCommand("docker", "rm", tmpImageName)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func loadImageConfiguration(image ImageDefinition) (*imageConfiguration, error) {
 	imageConfigurationPath := path.Join(image.ImageDir, "config.json")
 	imageConfiguration := imageConfiguration{}

@@ -16,7 +16,7 @@ func Command() cli.Command {
 		UsageText: "darch build [options] [image]",
 		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name:  "imageDir",
+				Name:  "imagesDir",
 				Value: ".",
 			},
 			cli.StringFlag{
@@ -25,16 +25,16 @@ func Command() cli.Command {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			return build(c.Args().First(), c.String("imageDir"), strings.Split(c.String("tags"), ","))
+			return build(c.Args().First(), c.String("imagesDir"), strings.Split(c.String("tags"), ","))
 		},
 	}
 }
 
-func build(imageName string, imageDir string, flags []string) error {
-	log.Println("Image directory: " + imageDir)
+func build(imageName string, imagesDir string, flags []string) error {
+	log.Println("Images directory: " + imagesDir)
 	log.Println("Image name: " + imageName)
 
-	imageDefinition, err := images.BuildDefinition(imageName, imageDir)
+	imageDefinition, err := images.BuildDefinition(imageName, imagesDir)
 
 	if err != nil {
 		return cli.NewExitError(err, 1)
