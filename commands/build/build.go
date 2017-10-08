@@ -30,7 +30,7 @@ func Command() cli.Command {
 	}
 }
 
-func build(imageName string, imagesDir string, flags []string) error {
+func build(imageName string, imagesDir string, tags []string) error {
 	log.Println("Images directory: " + imagesDir)
 	log.Println("Image name: " + imageName)
 
@@ -41,7 +41,7 @@ func build(imageName string, imagesDir string, flags []string) error {
 	}
 
 	err = images.BuildImageLayer(imageDefinition,
-		flags)
+		tags)
 
 	if err != nil {
 		return cli.NewExitError(err, 1)
