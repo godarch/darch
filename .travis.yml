@@ -1,0 +1,10 @@
+sudo: required
+language: go
+go:
+  - 1.9
+services:
+  - docker
+before_install:
+  - sudo apt-get install jq
+script:
+  make build
