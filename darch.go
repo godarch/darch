@@ -41,9 +41,6 @@ func main() {
 			Action: func(c *cli.Context) error {
 				fmt.Printf("version %s\n", Version)
 				fmt.Printf("commit %s\n", GitCommit)
-				if len(Version) > 0 {
-					fmt.Printf("VersionPrerelease %s\n", VersionPrerelease)
-				}
 				return nil
 			},
 		},
