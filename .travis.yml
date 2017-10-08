@@ -7,4 +7,4 @@ services:
 before_install:
   - sudo apt-get install jq
 script:
-  make build
+  - make build
