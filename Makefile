@@ -38,6 +38,7 @@ all: build
 build: deps
 	$(GO) build -ldflags "-X main.GitCommit=${GIT_COMMIT}${GIT_DIRTY} -X main.Version=${SEMVAR_VERSION}" -o bin/${BIN}
 package: build
+	@echo $(shell $(GITVERSION))
 	cp grub-mkconfig-script bin/
 	tar cvzpf bin/darch-${GOARCH}.tar.gz -C bin darch grub-mkconfig-script
 clean:
