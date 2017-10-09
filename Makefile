@@ -15,7 +15,7 @@ DEPS          = $(shell comm -23 <($(FIND_PKG_DEPS)) <($(FIND_STD_DEPS)))
 VERSION := $(shell grep "const Version " version.go | sed -E 's/.*"(.+)"$$/\1/')
 GIT_COMMIT=$(shell git rev-parse HEAD)
 GIT_DIRTY=$(shell test -n "`git status --porcelain`" && echo "+CHANGES" || true)
-SEMVAR_VERSION = $(shell $(GITVERSION) | jq '.SemVer' --raw-output)
+SEMVAR_VERSION = $(shell test -n "`echo ${TRAVIS_TAG}`" && echo "${TRAVIS_TAG}" | sed s/.//1 || $(GITVERSION) | jq '.SemVer' --raw-output)
 GOARCH=$(shell go env GOARCH)
 
 .PHONY: %
@@ -38,9 +38,6 @@ all: build
 build: deps
 	$(GO) build -ldflags "-X main.GitCommit=${GIT_COMMIT}${GIT_DIRTY} -X main.Version=${SEMVAR_VERSION}" -o bin/${BIN}
 package: build
-	@echo $(shell $(GITVERSION))
-	@echo $(shell $(GITVERSION) | jq '.SemVer' --raw-output)
-	@echo 'Dont printing version.'
 	cp grub-mkconfig-script bin/
 	tar cvzpf bin/darch-${GOARCH}.tar.gz -C bin darch grub-mkconfig-script
 clean:
