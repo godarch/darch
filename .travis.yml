@@ -7,11 +7,12 @@ services:
 before_install:
   - sudo apt-get install jq
 script:
-  - make build
+  - make package
 deploy:
   provider: releases
   api_key:
     secure: YWC7sDo0aaoOXAHc/+2VfEF/fhEsfUnET+9KduFCFpI88xmq7eyPZvmFxFgrzFFeD+1W2ZD+yS66zuS9RQjkaPvMzI5v32Xl6ZDC+vg29OKGSffsIO4+Sfc/diEaiXsdGdca5utc5nfwmSu8sPSdeXF53PidJqss59sHlVgg4r1WNqanoL8RZKUau9koH2CwkM5bF1UV/mouCwUmqlIiyknZmS157Tee75wAGYHsqXys9sH5xueZ8G/d07ky6TV/Adq/5wo71QNiWhsKZAitSB5TmSiihYUR3xClnLE7nc++UK+ePImkh1bpOUEeV96bQhBTJopwp29GA1spBCP3/+Wpb7dxvHy8JtQitHZk+36E5EeaW9AG2lsdWZ/YnG1PiXW7VFhIb6v0ElrOv6/Umuw2qLiryRX6WjigmnuhT3jxuyxaT2V4p0rWCUcz1sd/TZ1MOVgx6Iqx9NRnZY83iUL5JCthBCkqr+ulpTtx9MFRjMuR/d+O2CJwSrrnbO+YXUmJNX1dZUzhElwGkpP+P+9lnanVmwcV/ZYxkUV97jP6X/zIWScrIip8wbwuSvkLWPkvo9qZaOypQjWRmMgtLJtICmkCLqHohdF1Od6WZOTvLzz6/JyfbqNOG1p0rS9P8dwHPGze90Lzt2VQuD+acsE3kMEmYcMOpYOTqAbmhB4=
-  file: bin/darch
+  file: bin/darch-amd64.tar.gz
+  skip_cleanup: true
   on:
     tags: true
