@@ -18,5 +18,6 @@ deploy:
       tags: true
   - provider: script
     script: scripts/arch/travis-deploy-arch
+    skip_cleanup: true
     on:
       tags: true
