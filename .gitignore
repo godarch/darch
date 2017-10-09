@@ -2,3 +2,5 @@
 debug
 darch
 bin/
+scripts/arch/arch.key
+scripts/arch/aur

@@ -1,0 +1,34 @@
+#!/bin/bash
+
+DIRNAME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+if [ -z "$TRAVIS_TAG" ]; then
+    echo "No tag found."
+    exit 1
+fi
+
+PACKAGE_VERSION=`echo "${TRAVIS_TAG}" | sed s/.//1`
+
+echo Updating PKGBUILD for $PACKAGE_VERSION...
+
+git clone ssh://aur@aur.archlinux.org/darch.git $DIRNAME/aur
+
+cd $DIRNAME/aur
+
+openssl aes-256-cbc -K $encrypted_006e19af42e6_key -iv $encrypted_006e19af42e6_iv -in arch.key.enc -out arch.key -d
+ssh-add arch.key
+git config user.email pauldotknopf@gmail.com
+git config user.name Paul Knopf
+
+cp $DIRNAME/PKGBUILD-template PKGBUILD
+
+sed -i -e "s/PKGVER/$PACKAGE_VERSION/g" PKGBUILD
+sed -i -e "s/PKGVER/$PACKAGE_VERSION/g" PKGBUILD
+sed -i -e "s/PKGREL/1/g" PKGBUILD
+
+updpkgsums
+
+makepkg --printsrcinfo > .SRCINFO
+
+git commit -m "Auto update from tag $TRAVIS_TAG."
+git push origin master
