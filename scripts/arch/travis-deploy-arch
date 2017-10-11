@@ -31,6 +31,7 @@ cp $DIRNAME/PKGBUILD-template PKGBUILD
 sed -i -e "s/PKGVER/$PACKAGE_VERSION/g" PKGBUILD
 sed -i -e "s/PKGREL/1/g" PKGBUILD
 
+chmod -R 0777 `pwd`
 docker run --rm -v $(pwd):/working --user 1000 -w /working aitorpazos/archlinux-docker-makepkg bash -c "updpkgsums && makepkg --printsrcinfo > .SRCINFO"
 
 git add PKGBUILD .SRCINFO
