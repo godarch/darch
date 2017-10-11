@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 DIRNAME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIRNAME
@@ -13,6 +14,7 @@ PACKAGE_VERSION=`echo "${TRAVIS_TAG}" | sed s/.//1`
 echo Updating PKGBUILD for $PACKAGE_VERSION...
 
 openssl aes-256-cbc -K $encrypted_006e19af42e6_key -iv $encrypted_006e19af42e6_iv -in arch.key.enc -out arch.key -d
+eval `ssh-agent -s`
 ssh-add arch.key
 
 ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
