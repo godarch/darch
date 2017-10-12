@@ -4,8 +4,11 @@ set -e
 # This gives us the "linux_entry" command
 source /etc/grub.d/10_linux > /dev/null 2>&1
 
-for i in /boot/darch/* ; do
+for i in $(find /boot/darch/ -type d); do
     linux="$i/vmlinuz-linux"
+    if [ ! -f $linux ]; then
+        continue
+    fi
     gettext_printf "Found linux image: %s\n" "$linux" >&2
     basename=`basename $linux`
     dirname=`dirname $linux`
@@ -19,5 +22,5 @@ for i in /boot/darch/* ; do
     darch_source_uuid=`blkid $darch_source_block_device | sed -n 's/.* UUID=\"\([^\"]*\)\".*/\1/p'`
     darch_source_absolute=`echo ${i#$(df $i --output=target | tail -1)}`
     darch_cmdline="darchdir=UUID=$darch_source_uuid:$darch_source_absolute"
-    linux_entry "Darch - $(basename $i)" "${version}" "simple" "${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT} $darch_cmdline"
+    linux_entry "Darch - $image_name" "${version}" "simple" "${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT} $darch_cmdline"
 done

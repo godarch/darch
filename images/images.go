@@ -15,12 +15,10 @@ import (
 
 // ImageDefinition A struct representing an image to be built.
 type ImageDefinition struct {
-	Name               string
-	ImageDir           string
-	ImagesDir          string
-	Inherits           []string
-	BuildImageScript   string
-	ExtractImageScript string
+	Name      string
+	ImageDir  string
+	ImagesDir string
+	Inherits  []string
 }
 
 type imageConfiguration struct {
@@ -41,21 +39,11 @@ func BuildDefinition(imageName string, imagesDir string) (*ImageDefinition, erro
 	image := ImageDefinition{}
 
 	image.ImagesDir = utils.ExpandPath(imagesDir)
-	image.ImageDir = path.Join(imagesDir, imageName)
-	image.BuildImageScript = path.Join(imagesDir, "build-image")
-	image.ExtractImageScript = path.Join(imagesDir, "extract-image")
+	image.ImageDir = path.Join(image.ImagesDir, imageName)
 	image.Name = imageName
 
 	if !utils.DirectoryExists(image.ImageDir) {
 		return nil, fmt.Errorf("Image directory %s doesn't exist", image.ImageDir)
-	}
-
-	if !utils.FileExists(image.BuildImageScript) {
-		return nil, fmt.Errorf("No build-image script exists at %s", image.BuildImageScript)
-	}
-
-	if !utils.FileExists(image.ExtractImageScript) {
-		return nil, fmt.Errorf("No build-image script exists at %s", image.ExtractImageScript)
 	}
 
 	imageConfiguration, err := loadImageConfiguration(image)
@@ -72,20 +60,16 @@ func BuildDefinition(imageName string, imagesDir string) (*ImageDefinition, erro
 }
 
 // BuildImageLayer Run installation scripts on top of another image.
-func BuildImageLayer(imageDefinition *ImageDefinition, tags []string) error {
+func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefix string) error {
 	inherits := imageDefinition.Inherits[0]
 	if strings.HasPrefix(inherits, "external:") {
 		inherits = inherits[len("external:"):len(inherits)]
+	} else {
+		inherits = buildPrefix + inherits
 	}
 
-	log.Println("Building image " + imageDefinition.Name + ".")
+	log.Println("Building image " + buildPrefix + imageDefinition.Name + ".")
 	log.Println("Using parent image " + inherits + ".")
-	if len(tags) > 0 {
-		log.Println("Using the following tags:")
-		for _, tag := range tags {
-			log.Println("\t" + tag)
-		}
-	}
 
 	tmpImageName := "darch-building-" + imageDefinition.Name
 
@@ -110,13 +94,13 @@ func BuildImageLayer(imageDefinition *ImageDefinition, tags []string) error {
 		return err
 	}
 
-	err = runCommand("docker", "commit", tmpImageName, imageDefinition.Name)
+	err = runCommand("docker", "commit", tmpImageName, buildPrefix+imageDefinition.Name)
 	if err != nil {
 		return err
 	}
 
 	for _, tag := range tags {
-		err = runCommand("docker", "tag", imageDefinition.Name, imageDefinition.Name+":"+tag)
+		err = runCommand("docker", "tag", imageDefinition.Name, buildPrefix+imageDefinition.Name+":"+tag)
 		if err != nil {
 			return err
 		}
@@ -136,10 +120,10 @@ func BuildImageLayer(imageDefinition *ImageDefinition, tags []string) error {
 }
 
 // ExtractImage Extracts an image (with tag) to a specified directory
-func ExtractImage(imageDefinition *ImageDefinition, tag string, destination string) error {
-	tmpImageName := "darch-extracting-" + imageDefinition.Name
+func ExtractImage(name string, tag string, destination string) error {
+	tmpImageName := "darch-extracting-" + strings.Replace(name, "/", "", -1)
 
-	imageName := imageDefinition.Name
+	imageName := name
 	if len(tag) > 0 {
 		imageName = imageName + ":" + tag
 	}
