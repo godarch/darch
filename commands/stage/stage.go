@@ -14,17 +14,15 @@ import (
 // Command Returns the command to be passed to a cli context.
 func Command() cli.Command {
 	return cli.Command{
-		Name:      "stage",
-		Usage:     "Stage an image for booting.",
-		UsageText: "darch stage [options] [image]",
+		Name: "stage",
 		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:  "imagesDir",
-				Value: ".",
-			},
 			cli.StringFlag{
 				Name:  "tag",
 				Value: "local",
+			},
+			cli.StringFlag{
+				Name:  "source",
+				Value: "/var/darch",
 			},
 			cli.StringFlag{
 				Name:  "fstab",
@@ -32,7 +30,7 @@ func Command() cli.Command {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			err := stage(c.Args().First(), c.String("imagesDir"), c.String("tag"), c.String("fstab"))
+			err := stage(c.Args().First(), c.String("tag"), c.String("source"), c.String("fstab"))
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
@@ -41,28 +39,33 @@ func Command() cli.Command {
 	}
 }
 
-func stage(imageName string, imagesDir string, tag string, fstab string) error {
+func stage(name string, tag string, sourceDirectory string, fstab string) error {
 
-	if len(imageName) == 0 {
-		return fmt.Errorf("An image name is required")
+	if len(name) == 0 {
+		return fmt.Errorf("Name is required")
 	}
 
-	imagesDir = utils.ExpandPath(imagesDir)
-
-	if len(imagesDir) == 0 {
-		return fmt.Errorf("An images directory must be provided")
+	if len(tag) == 0 {
+		return fmt.Errorf("Tag is required")
 	}
 
-	log.Println("Image name: " + imageName)
-	log.Println("Images directory: " + imagesDir)
-
-	sourceDirectory := path.Join(imagesDir, ".extracted", imageName+"-"+tag)
-
-	if !utils.DirectoryExists(sourceDirectory) {
-		return fmt.Errorf("No image found at %s", sourceDirectory)
+	if len(sourceDirectory) == 0 {
+		return fmt.Errorf("Source is required")
 	}
 
-	destinationDirectory := path.Join("/boot", "darch", imageName+"-"+tag)
+	sourceDirectory = utils.ExpandPath(sourceDirectory)
+
+	log.Println("Name: " + name)
+	log.Println("Tag: " + tag)
+	log.Println("Source: " + sourceDirectory)
+
+	sourceImageDirectory := path.Join(sourceDirectory, name+"/"+tag)
+
+	if !utils.DirectoryExists(sourceImageDirectory) {
+		return fmt.Errorf("No image found at %s", sourceImageDirectory)
+	}
+
+	destinationDirectory := path.Join("/boot", "darch", name, tag)
 
 	if utils.DirectoryExists(destinationDirectory) {
 		log.Println("Cleaning already existing staging directory...")
@@ -75,14 +78,14 @@ func stage(imageName string, imagesDir string, tag string, fstab string) error {
 
 	log.Printf("Copying boot files to %s...\n", destinationDirectory)
 
-	err := utils.CopyDir(sourceDirectory, destinationDirectory)
+	err := utils.CopyDir(sourceImageDirectory, destinationDirectory)
 	if err != nil {
 		return err
 	}
 
 	if len(fstab) > 0 {
 		if !path.IsAbs(fstab) {
-			fstab = utils.ExpandPath(path.Join(imagesDir, fstab))
+			fstab = utils.ExpandPath(path.Join(sourceDirectory, fstab))
 		}
 
 		log.Printf("Staging fstab file %s\n", fstab)
@@ -94,7 +97,7 @@ func stage(imageName string, imagesDir string, tag string, fstab string) error {
 		}
 	}
 
-	log.Printf("Successfully staged %s at tag %s\n", imageName, tag)
+	log.Printf("Successfully staged %s at tag %s\n", name, tag)
 
 	if !utils.FileExists("/etc/grub.d/60_darch") {
 		return fmt.Errorf("Grub generator doesn't exist at %s", "/etc/grub.d/60_darch")

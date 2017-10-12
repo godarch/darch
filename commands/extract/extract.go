@@ -1,10 +1,12 @@
 package extract
 
 import (
+	"fmt"
 	"log"
 	"path"
 
 	"../../images"
+	"../../utils"
 	"github.com/urfave/cli"
 )
 
@@ -16,41 +18,44 @@ func Command() cli.Command {
 		UsageText: "darch extract [options] [image]",
 		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name:  "imagesDir",
-				Value: ".",
-			},
-			cli.StringFlag{
 				Name:  "tag",
 				Value: "local",
 			},
 			cli.StringFlag{
-				Name: "destination",
+				Name:  "destination",
+				Value: "/var/darch",
 			},
 		},
 		Action: func(c *cli.Context) error {
-			return extract(c.Args().First(), c.String("imagesDir"), c.String("tag"), c.String("destination"))
+			err := extract(c.Args().First(), c.String("tag"), c.String("destination"))
+			if err != nil {
+				return cli.NewExitError(err, 1)
+			}
+			return err
 		},
 	}
 }
 
-func extract(imageName string, imagesDir string, tag string, destination string) error {
-	log.Println("Images directory: " + imagesDir)
-	log.Println("Image name: " + imageName)
+func extract(name string, tag string, destinationDirectory string) error {
+
+	if len(name) == 0 {
+		return fmt.Errorf("Name is required")
+	}
+
+	if len(tag) == 0 {
+		return fmt.Errorf("Tag is required")
+	}
+
+	if len(destinationDirectory) == 0 {
+		return fmt.Errorf("Destination is required")
+	}
+
+	destinationDirectory = utils.ExpandPath(destinationDirectory)
+	destinationDirectory = path.Join(destinationDirectory, name+"/"+tag)
+
+	log.Println("Name: " + name)
 	log.Println("Tag: " + tag)
+	log.Println("Destination: " + destinationDirectory)
 
-	imageDefinition, err := images.BuildDefinition(imageName, imagesDir)
-
-	if err != nil {
-		return cli.NewExitError(err, 1)
-	}
-
-	if len(destination) == 0 {
-		destination = path.Join(imageDefinition.ImagesDir, ".extracted", imageDefinition.Name+"-"+tag)
-	}
-
-	log.Println("Destination: " + destination)
-
-	images.ExtractImage(imageDefinition, tag, destination)
-
-	return nil
+	return images.ExtractImage(name, tag, destinationDirectory)
 }
