@@ -24,8 +24,6 @@ md5sums=()
 noextract=()
 validpgpkeys=()
 package() {
-	install -d $pkgdir/usr/bin
-	install darch $pkgdir/usr/bin
-	install -d $pkgdir/etc/grub.d/
-	install grub-mkconfig-script $pkgdir/etc/grub.d/60_darch
+	# The tarball has all the directories setup correctly.
+	cp * -r $pkgdir
 }
