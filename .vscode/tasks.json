@@ -4,7 +4,7 @@
         {
             "taskName": "Build",
             "type": "shell",
-            "command": "${workspaceRoot}/go build darch.go"
+            "command": "make"
         }
     ]
 }
