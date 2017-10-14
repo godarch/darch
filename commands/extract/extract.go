@@ -15,18 +15,23 @@ func Command() cli.Command {
 	return cli.Command{
 		Name:      "extract",
 		Usage:     "Extract an image.",
-		UsageText: "darch extract [options] [image]",
+		ArgsUsage: "IMAGE_NAME",
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:  "tag",
+				Usage: "The tag to extract.",
 				Value: "local",
 			},
 			cli.StringFlag{
 				Name:  "destination",
+				Usage: "The location to extract the image to.",
 				Value: "/var/darch",
 			},
 		},
 		Action: func(c *cli.Context) error {
+			if len(c.Args()) != 1 {
+				return cli.NewExitError(fmt.Errorf("Unexpected arguements"), 1)
+			}
 			err := extract(c.Args().First(), c.String("tag"), c.String("destination"))
 			if err != nil {
 				return cli.NewExitError(err, 1)

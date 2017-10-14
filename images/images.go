@@ -79,44 +79,40 @@ func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefi
 	}
 	err = runCommand("docker", "exec", "--privileged", tmpImageName, "cp", "-rp", "/images", "/root.x86_64/")
 	if err != nil {
+		destroyContainer(tmpImageName)
 		return err
 	}
 	err = runCommand("docker", "exec", "--privileged", tmpImageName, "arch-chroot", "/root.x86_64", "/bin/bash", "-c", "cd /images/"+imageDefinition.Name+" && ./script")
 	if err != nil {
+		destroyContainer(tmpImageName)
 		return err
 	}
 	err = runCommand("docker", "exec", "--privileged", tmpImageName, "rm", "-r", "/root.x86_64/images")
 	if err != nil {
+		destroyContainer(tmpImageName)
 		return err
 	}
 	err = runCommand("docker", "exec", "--privileged", tmpImageName, "rm", "-r", "-f", "/root.x86_64/var/cache/pacman/pkg/")
 	if err != nil {
+		destroyContainer(tmpImageName)
 		return err
 	}
 
 	err = runCommand("docker", "commit", tmpImageName, buildPrefix+imageDefinition.Name)
 	if err != nil {
+		destroyContainer(tmpImageName)
 		return err
 	}
 
 	for _, tag := range tags {
 		err = runCommand("docker", "tag", imageDefinition.Name, buildPrefix+imageDefinition.Name+":"+tag)
 		if err != nil {
+			destroyContainer(tmpImageName)
 			return err
 		}
 	}
 
-	err = runCommand("docker", "stop", tmpImageName)
-	if err != nil {
-		return err
-	}
-
-	err = runCommand("docker", "rm", tmpImageName)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return destroyContainer(tmpImageName)
 }
 
 // ExtractImage Extracts an image (with tag) to a specified directory
@@ -128,54 +124,48 @@ func ExtractImage(name string, tag string, destination string) error {
 		imageName = imageName + ":" + tag
 	}
 
-	err := runCommand("docker", "run", "-d", "--privileged", "--name", tmpImageName, imageName)
-	if err != nil {
-		return err
-	}
-
 	if !utils.DirectoryExists(destination) {
-		err = os.MkdirAll(destination, os.ModePerm)
+		err := os.MkdirAll(destination, os.ModePerm)
 		if err != nil {
 			return err
 		}
 	}
 
-	err = utils.CleanDirectory(destination)
+	err := utils.CleanDirectory(destination)
+	if err != nil {
+		return err
+	}
+
+	err = runCommand("docker", "run", "-d", "--privileged", "--name", tmpImageName, imageName)
 	if err != nil {
 		return err
 	}
 
 	err = runCommand("docker", "exec", tmpImageName, "mksquashfs", "root.x86_64", "/rootfs.squash")
 	if err != nil {
+		destroyContainer(tmpImageName)
 		return err
 	}
 
 	err = runCommand("docker", "cp", tmpImageName+":/rootfs.squash", path.Join(destination, "rootfs.squash"))
 	if err != nil {
+		destroyContainer(tmpImageName)
 		return err
 	}
 
 	err = runCommand("docker", "cp", tmpImageName+":/root.x86_64/boot/vmlinuz-linux", path.Join(destination, "vmlinuz-linux"))
 	if err != nil {
+		destroyContainer(tmpImageName)
 		return err
 	}
 
 	err = runCommand("docker", "cp", tmpImageName+":/root.x86_64/boot/initramfs-linux.img", path.Join(destination, "initramfs-linux.img"))
 	if err != nil {
+		destroyContainer(tmpImageName)
 		return err
 	}
 
-	err = runCommand("docker", "stop", tmpImageName)
-	if err != nil {
-		return err
-	}
-
-	err = runCommand("docker", "rm", tmpImageName)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return destroyContainer(tmpImageName)
 }
 
 func loadImageConfiguration(image ImageDefinition) (*imageConfiguration, error) {
@@ -212,4 +202,18 @@ func runCommand(program string, args ...string) error {
 	cmd.Stdin = os.Stdin
 
 	return cmd.Run()
+}
+
+func destroyContainer(containerName string) error {
+	err := runCommand("docker", "stop", containerName)
+	if err != nil {
+		return err
+	}
+
+	err = runCommand("docker", "rm", containerName)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
