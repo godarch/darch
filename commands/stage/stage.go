@@ -14,22 +14,30 @@ import (
 // Command Returns the command to be passed to a cli context.
 func Command() cli.Command {
 	return cli.Command{
-		Name: "stage",
+		Name:      "stage",
+		Usage:     "Stage an image for booting.",
+		ArgsUsage: "IMAGE_NAME",
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:  "tag",
+				Usage: "The tag to stage.",
 				Value: "local",
 			},
 			cli.StringFlag{
 				Name:  "source",
+				Usage: "The location where the extract images are.",
 				Value: "/var/darch",
 			},
 			cli.StringFlag{
 				Name:  "fstab",
+				Usage: "The fstab file to use for the booted image. If relative path, darch will look in \"source\" for the file.",
 				Value: "defaultfstab",
 			},
 		},
 		Action: func(c *cli.Context) error {
+			if len(c.Args()) != 1 {
+				return cli.NewExitError(fmt.Errorf("Unexpected arguements"), 1)
+			}
 			err := stage(c.Args().First(), c.String("tag"), c.String("source"), c.String("fstab"))
 			if err != nil {
 				return cli.NewExitError(err, 1)
@@ -51,6 +59,10 @@ func stage(name string, tag string, sourceDirectory string, fstab string) error 
 
 	if len(sourceDirectory) == 0 {
 		return fmt.Errorf("Source is required")
+	}
+
+	if len(fstab) == 0 {
+		return fmt.Errorf("fstab is required")
 	}
 
 	sourceDirectory = utils.ExpandPath(sourceDirectory)
