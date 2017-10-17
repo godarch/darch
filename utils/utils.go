@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 // ExpandPath Expands the given path to an absolute directory
@@ -157,4 +158,29 @@ func CopyDir(src string, dst string) (err error) {
 	}
 
 	return
+}
+
+// ConvertVariableStringsToMap Converts an array of "KEY=VALUE" strings
+// to a hash table of "hash["KEY"] = "VALUE""".
+func ConvertVariableStringsToMap(input []string) (map[string]string, error) {
+	m := make(map[string]string)
+
+	for _, value := range input {
+		if len(value) == 0 {
+			continue
+		}
+		split := strings.Split(value, "=")
+		if len(split) > 2 {
+			return nil, fmt.Errorf("Invalid environment value %s", value)
+		}
+		if len(split) == 2 {
+			m[split[0]] = split[1]
+			continue
+		}
+		if len(split) == 1 {
+			m[split[0]] = ""
+		}
+	}
+
+	return m, nil
 }
