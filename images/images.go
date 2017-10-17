@@ -60,7 +60,7 @@ func BuildDefinition(imageName string, imagesDir string) (*ImageDefinition, erro
 }
 
 // BuildImageLayer Run installation scripts on top of another image.
-func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefix string) error {
+func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefix string, environmentVariables map[string]string) error {
 	inherits := imageDefinition.Inherits[0]
 	if strings.HasPrefix(inherits, "external:") {
 		inherits = inherits[len("external:"):len(inherits)]
@@ -82,7 +82,20 @@ func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefi
 		destroyContainer(tmpImageName)
 		return err
 	}
-	err = runCommand("docker", "exec", "--privileged", tmpImageName, "arch-chroot", "/root.x86_64", "/bin/bash", "-c", "cd /images/"+imageDefinition.Name+" && ./script")
+	arguements := make([]string, 0)
+	arguements = append(arguements, "exec")
+	arguements = append(arguements, "--privileged")
+	for environmentVariableName, environmentVariableValue := range environmentVariables {
+		arguements = append(arguements, "-e")
+		arguements = append(arguements, environmentVariableName+"="+environmentVariableValue)
+	}
+	arguements = append(arguements, tmpImageName)
+	arguements = append(arguements, "arch-chroot")
+	arguements = append(arguements, "/root.x86_64")
+	arguements = append(arguements, "/bin/bash")
+	arguements = append(arguements, "-c")
+	arguements = append(arguements, "cd /images/"+imageDefinition.Name+" && ./script")
+	err = runCommand("docker", arguements...)
 	if err != nil {
 		destroyContainer(tmpImageName)
 		return err

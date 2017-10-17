@@ -18,26 +18,33 @@ func Command() cli.Command {
 		ArgsUsage: "IMAGE_NAME",
 		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name:  "imagesDir",
+				Name:  "imagesDir, d",
 				Usage: "Location of the images to build.",
 				Value: ".",
 			},
 			cli.StringFlag{
-				Name:  "tags",
+				Name:  "tags, t",
 				Usage: "Command separated list of tags to associated with the built image.",
 				Value: "local",
 			},
 			cli.StringFlag{
-				Name:  "imagePrefix",
+				Name:  "imagePrefix, p",
 				Usage: "Prefix for built images. For example, a value of \"pauldotknopf/darch-\" while building image \"base\", the generated image will be named \"pauldotknopf/darch-base\".",
 				Value: "",
+			},
+			cli.StringSliceFlag{
+				Name: "environment, e",
 			},
 		},
 		Action: func(c *cli.Context) error {
 			if len(c.Args()) != 1 {
 				return cli.NewExitError(fmt.Errorf("Unexpected arguements"), 1)
 			}
-			err := build(c.Args().First(), c.String("imagesDir"), strings.Split(c.String("tags"), ","), c.String("imagePrefix"))
+			environmentVaribles, err := utils.ConvertVariableStringsToMap(c.StringSlice("environment"))
+			if err != nil {
+				return cli.NewExitError(err, 1)
+			}
+			err = build(c.Args().First(), c.String("imagesDir"), strings.Split(c.String("tags"), ","), c.String("imagePrefix"), environmentVaribles)
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
@@ -46,8 +53,7 @@ func Command() cli.Command {
 	}
 }
 
-func build(name string, imagesDir string, tags []string, imagePrefix string) error {
-
+func build(name string, imagesDir string, tags []string, imagePrefix string, environmentVariables map[string]string) error {
 	if len(name) == 0 {
 		return fmt.Errorf("Name is required")
 	}
@@ -80,7 +86,8 @@ func build(name string, imagesDir string, tags []string, imagePrefix string) err
 	err = images.BuildImageLayer(
 		imageDefinition,
 		tags,
-		imagePrefix)
+		imagePrefix,
+		environmentVariables)
 
 	if err != nil {
 		return cli.NewExitError(err, 1)

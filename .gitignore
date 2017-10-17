@@ -4,3 +4,4 @@ darch
 bin/
 scripts/arch/arch.key
 scripts/arch/aur
+rootfs/arch/rootfs.tar.gz

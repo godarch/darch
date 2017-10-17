@@ -1,0 +1,6 @@
+#!/bin/bash
+set -e
+
+if [ ! -f rootfs.tar.gz ]; then
+	cat archlinux-bootstrap-2017.09.01-x86_64.tar.gz.?? > rootfs.tar.gz
+fi

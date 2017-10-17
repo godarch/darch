@@ -1,0 +1,10 @@
+build() {
+    add_runscript
+    add_module squashfs
+}
+
+help() {
+    cat <<EOF
+THIS IS A HELP
+EOF
+}
