@@ -18,22 +18,22 @@ func Command() cli.Command {
 		ArgsUsage: "IMAGE_NAME",
 		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name:  "imagesDir",
+				Name:  "imagesDir, d",
 				Usage: "Location of the images to build.",
 				Value: ".",
 			},
 			cli.StringFlag{
-				Name:  "tags",
+				Name:  "tags, t",
 				Usage: "Command separated list of tags to associated with the built image.",
 				Value: "local",
 			},
 			cli.StringFlag{
-				Name:  "imagePrefix",
+				Name:  "imagePrefix, p",
 				Usage: "Prefix for built images. For example, a value of \"pauldotknopf/darch-\" while building image \"base\", the generated image will be named \"pauldotknopf/darch-base\".",
 				Value: "",
 			},
 			cli.StringSliceFlag{
-				Name: "environment",
+				Name: "environment, e",
 			},
 		},
 		Action: func(c *cli.Context) error {

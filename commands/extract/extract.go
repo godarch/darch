@@ -18,12 +18,12 @@ func Command() cli.Command {
 		ArgsUsage: "IMAGE_NAME",
 		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name:  "tag",
+				Name:  "tag, t",
 				Usage: "The tag to extract.",
 				Value: "local",
 			},
 			cli.StringFlag{
-				Name:  "destination",
+				Name:  "destination, d",
 				Usage: "The location to extract the image to.",
 				Value: "/var/darch",
 			},
