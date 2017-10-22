@@ -1,0 +1,9 @@
+#!/bin/bash
+
+source <(cat /usr/sbin/arch-chroot | head -n -1)
+
+if [ -f /arch-chroot-customizations ] ; then
+    source /arch-chroot-customizations
+fi
+
+source <(cat /usr/sbin/arch-chroot | tail -n -1)

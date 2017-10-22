@@ -2,4 +2,4 @@
 
 DIRNAME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-docker run -v $DIRNAME:/repo gittools/gitversion $@
+docker run --rm -v $DIRNAME:/repo gittools/gitversion $@

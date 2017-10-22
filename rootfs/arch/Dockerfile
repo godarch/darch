@@ -7,6 +7,9 @@ RUN pacman -S --noconfirm arch-install-scripts squashfs-tools
 # Add our rootfs
 ADD rootfs.tar.gz /
 
+# Add custom arch-chroot that handles custom mounts
+ADD arch-chroot-custom /usr/sbin/
+
 # Add our cpio hooks to be used when building the image
 ADD initcpio-hooks/ /initcpio-hooks
 RUN mkdir -p /root.x86_64/etc/mkinitcpio.d/

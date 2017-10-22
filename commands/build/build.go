@@ -32,6 +32,11 @@ func Command() cli.Command {
 				Usage: "Prefix for built images. For example, a value of \"pauldotknopf/darch-\" while building image \"base\", the generated image will be named \"pauldotknopf/darch-base\".",
 				Value: "",
 			},
+			cli.StringFlag{
+				Name:  "packageCache, c",
+				Usage: "Location where package caches are stored. This speeds up builds, preventing downloading.",
+				Value: "/var/darch/cache/packages",
+			},
 			cli.StringSliceFlag{
 				Name: "environment, e",
 			},
@@ -44,7 +49,7 @@ func Command() cli.Command {
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
-			err = build(c.Args().First(), c.String("imagesDir"), strings.Split(c.String("tags"), ","), c.String("imagePrefix"), environmentVaribles)
+			err = build(c.Args().First(), c.String("imagesDir"), strings.Split(c.String("tags"), ","), c.String("imagePrefix"), c.String("packageCache"), environmentVaribles)
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
@@ -53,7 +58,7 @@ func Command() cli.Command {
 	}
 }
 
-func build(name string, imagesDir string, tags []string, imagePrefix string, environmentVariables map[string]string) error {
+func build(name string, imagesDir string, tags []string, imagePrefix string, packageCache string, environmentVariables map[string]string) error {
 	if len(name) == 0 {
 		return fmt.Errorf("Name is required")
 	}
@@ -87,6 +92,7 @@ func build(name string, imagesDir string, tags []string, imagePrefix string, env
 		imageDefinition,
 		tags,
 		imagePrefix,
+		packageCache,
 		environmentVariables)
 
 	if err != nil {
