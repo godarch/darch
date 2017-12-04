@@ -18,7 +18,7 @@ type ImageDefinition struct {
 	Name      string
 	ImageDir  string
 	ImagesDir string
-	Inherits  []string
+	Inherits  string
 }
 
 type imageConfiguration struct {
@@ -52,9 +52,7 @@ func BuildDefinition(imageName string, imagesDir string) (*ImageDefinition, erro
 		return nil, err
 	}
 
-	image.Inherits = []string{
-		imageConfiguration.Inherits,
-	}
+	image.Inherits = imageConfiguration.Inherits
 
 	return &image, nil
 }
@@ -71,7 +69,7 @@ func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefi
 		}
 	}
 
-	inherits := imageDefinition.Inherits[0]
+	inherits := imageDefinition.Inherits
 	if strings.HasPrefix(inherits, "external:") {
 		inherits = inherits[len("external:"):len(inherits)]
 	} else {
