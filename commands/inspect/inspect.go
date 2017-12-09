@@ -144,10 +144,22 @@ func children(name string, imagesDir string) error {
 
 	imagesDir = utils.ExpandPath(imagesDir)
 
-	allDefinitions, err := images.BuildAllDefinitions(imagesDir)
+	imageDefinitions, err := images.BuildAllDefinitions(imagesDir)
 
-	for _, imageDefinition := range allDefinitions {
-		log.Println(imageDefinition.Name)
+	if err != nil {
+		return err
+	}
+
+	current, ok := imageDefinitions[name]
+
+	if !ok {
+		return fmt.Errorf("Image %s doesn't exist", name)
+	}
+
+	for _, imageDefinition := range imageDefinitions {
+		if imageDefinition.Inherits == current.Name {
+			log.Println(imageDefinition.Name)
+		}
 	}
 
 	return err
