@@ -15,10 +15,11 @@ import (
 
 // ImageDefinition A struct representing an image to be built.
 type ImageDefinition struct {
-	Name      string
-	ImageDir  string
-	ImagesDir string
-	Inherits  string
+	Name             string
+	ImageDir         string
+	ImagesDir        string
+	Inherits         string
+	InheritsExternal bool
 }
 
 type imageConfiguration struct {
@@ -52,7 +53,13 @@ func BuildDefinition(imageName string, imagesDir string) (*ImageDefinition, erro
 		return nil, err
 	}
 
-	image.Inherits = imageConfiguration.Inherits
+	if strings.HasPrefix(imageConfiguration.Inherits, "external:") {
+		image.InheritsExternal = true
+		image.Inherits = imageConfiguration.Inherits[len("external:"):len(imageConfiguration.Inherits)]
+	} else {
+		image.InheritsExternal = false
+		image.Inherits = imageConfiguration.Inherits
+	}
 
 	return &image, nil
 }
@@ -62,7 +69,7 @@ func verifyDependencies(imageDefinition ImageDefinition, imageDefinitions map[st
 		currentStack = make(map[string]bool, 0)
 	}
 
-	if strings.HasPrefix(imageDefinition.Inherits, "external:") {
+	if imageDefinition.InheritsExternal {
 		// we reached the end, all good!
 		return nil
 	}
@@ -128,8 +135,8 @@ func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefi
 	}
 
 	inherits := imageDefinition.Inherits
-	if strings.HasPrefix(inherits, "external:") {
-		inherits = inherits[len("external:"):len(inherits)]
+	if imageDefinition.InheritsExternal {
+		// No build prefix for externally referenced image.
 	} else {
 		inherits = buildPrefix + inherits
 	}

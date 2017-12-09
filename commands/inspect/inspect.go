@@ -7,6 +7,7 @@ import (
 
 	"../../images"
 	"../../utils"
+	"github.com/disiqueira/gotree"
 	"github.com/urfave/cli"
 )
 
@@ -63,6 +64,27 @@ func childrenCommand() cli.Command {
 	}
 }
 
+func treeCommand() cli.Command {
+	return cli.Command{
+		Name:  "tree",
+		Usage: "Display all images in a tree.",
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:  "imagesDir, d",
+				Usage: "Location of the images.",
+				Value: ".",
+			},
+		},
+		Action: func(c *cli.Context) error {
+			err := tree(c.String("imagesDir"))
+			if err != nil {
+				return cli.NewExitError(err, 1)
+			}
+			return nil
+		},
+	}
+}
+
 // Command Returns the command to be passed to a cli context.
 func Command() cli.Command {
 	return cli.Command{
@@ -79,6 +101,7 @@ func Command() cli.Command {
 		Subcommands: []cli.Command{
 			parentsCommand(),
 			childrenCommand(),
+			treeCommand(),
 		},
 		Action: func(c *cli.Context) error {
 			if len(c.Args()) != 1 {
@@ -163,6 +186,71 @@ func children(name string, imagesDir string) error {
 	}
 
 	return err
+}
+
+func buildTreeRecursively(parentDefinition images.ImageDefinition, imageDefinitions map[string]images.ImageDefinition) []gotree.GTStructure {
+	children := make([]gotree.GTStructure, 0)
+
+	for _, childImageDefinition := range imageDefinitions {
+		if childImageDefinition.Inherits == parentDefinition.Name {
+			var childNode gotree.GTStructure
+			childNode.Name = childImageDefinition.Name
+
+			for _, child := range buildTreeRecursively(childImageDefinition, imageDefinitions) {
+				childNode.Items = append(childNode.Items, child)
+			}
+			children = append(children, childNode)
+		}
+	}
+
+	return children
+}
+
+func tree(imagesDir string) error {
+	if len(imagesDir) == 0 {
+		return fmt.Errorf("Images directory is required")
+	}
+
+	imagesDir = utils.ExpandPath(imagesDir)
+
+	imageDefinitions, err := images.BuildAllDefinitions(imagesDir)
+
+	if err != nil {
+		return err
+	}
+
+	externalImages := make([]string, 0)
+
+	for _, imageDefinition := range imageDefinitions {
+		if imageDefinition.InheritsExternal {
+			externalImages = append(externalImages, imageDefinition.Inherits)
+		}
+	}
+
+	// this will be our root items
+	externalImages = utils.RemoveDuplicates(externalImages)
+
+	var rootNode gotree.GTStructure
+
+	for _, externalImage := range externalImages {
+		var externalImageNode gotree.GTStructure
+		externalImageNode.Name = externalImage
+		for _, imageDefinition := range imageDefinitions {
+			if imageDefinition.InheritsExternal && imageDefinition.Inherits == externalImage {
+				var childNode gotree.GTStructure
+				childNode.Name = imageDefinition.Name
+				for _, child := range buildTreeRecursively(imageDefinition, imageDefinitions) {
+					childNode.Items = append(childNode.Items, child)
+				}
+				externalImageNode.Items = append(externalImageNode.Items, childNode)
+			}
+		}
+		rootNode.Items = append(rootNode.Items, externalImageNode)
+	}
+
+	gotree.PrintTree(rootNode)
+
+	return nil
 }
 
 func inspect(name string, imagesDir string) error {
