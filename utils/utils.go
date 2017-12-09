@@ -184,3 +184,20 @@ func ConvertVariableStringsToMap(input []string) (map[string]string, error) {
 
 	return m, nil
 }
+
+// GetChildDirectories Gets child directories in the given directory
+func GetChildDirectories(path string) ([]string, error) {
+	directories := make([]string, 0)
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range files {
+		if f.IsDir() {
+			if !strings.HasPrefix(f.Name(), ".") {
+				directories = append(directories, f.Name())
+			}
+		}
+	}
+	return directories, nil
+}

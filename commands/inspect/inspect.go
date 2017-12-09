@@ -38,6 +38,31 @@ func parentsCommand() cli.Command {
 	}
 }
 
+func childrenCommand() cli.Command {
+	return cli.Command{
+		Name:      "children",
+		Usage:     "The children that are dependent on the provided image.",
+		ArgsUsage: "IMAGE_NAME",
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:  "imagesDir, d",
+				Usage: "Location of the images.",
+				Value: ".",
+			},
+		},
+		Action: func(c *cli.Context) error {
+			if len(c.Args()) != 1 {
+				return cli.NewExitError(fmt.Errorf("Unexpected arguements"), 1)
+			}
+			err := children(c.Args().First(), c.String("imagesDir"))
+			if err != nil {
+				return cli.NewExitError(err, 1)
+			}
+			return nil
+		},
+	}
+}
+
 // Command Returns the command to be passed to a cli context.
 func Command() cli.Command {
 	return cli.Command{
@@ -53,6 +78,7 @@ func Command() cli.Command {
 		},
 		Subcommands: []cli.Command{
 			parentsCommand(),
+			childrenCommand(),
 		},
 		Action: func(c *cli.Context) error {
 			if len(c.Args()) != 1 {
@@ -79,38 +105,52 @@ func parents(name string, imagesDir string, excludeExternal bool) error {
 
 	imagesDir = utils.ExpandPath(imagesDir)
 
-	imageDefinition, err := images.BuildDefinition(name, imagesDir)
+	imageDefinitions, err := images.BuildAllDefinitions(imagesDir)
 
 	if err != nil {
-		return cli.NewExitError(err, 1)
+		return err
 	}
 
-	parents := make([]*images.ImageDefinition, 0)
+	current, ok := imageDefinitions[name]
 
-	current := imageDefinition
+	if !ok {
+		return fmt.Errorf("Image %s doesn't exist", name)
+	}
 
-	for current != nil {
-		parents = append(parents, current)
+	finished := false
+	for finished != true {
 		if strings.HasPrefix(current.Inherits, "external:") {
-			current = nil
-		} else {
-			current, err = images.BuildDefinition(current.Inherits, imagesDir)
-			if err != nil {
-				return cli.NewExitError(err, 1)
+			if !excludeExternal {
+				log.Println(current.Inherits[len("external:"):len(current.Inherits)])
 			}
+			finished = true
+		} else {
+			current = imageDefinitions[current.Inherits]
+			log.Println(current.Name)
 		}
 	}
 
-	for _, child := range parents[1:] {
-		log.Println(child.Name)
-	}
-
-	if !excludeExternal {
-		externalImage := parents[len(parents)-1].Inherits
-		log.Println(externalImage[len("external:"):len(externalImage)])
-
-	}
 	return nil
+}
+
+func children(name string, imagesDir string) error {
+	if len(name) == 0 {
+		return fmt.Errorf("Name is required")
+	}
+
+	if len(imagesDir) == 0 {
+		return fmt.Errorf("Images directory is required")
+	}
+
+	imagesDir = utils.ExpandPath(imagesDir)
+
+	allDefinitions, err := images.BuildAllDefinitions(imagesDir)
+
+	for _, imageDefinition := range allDefinitions {
+		log.Println(imageDefinition.Name)
+	}
+
+	return err
 }
 
 func inspect(name string, imagesDir string) error {

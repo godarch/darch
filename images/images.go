@@ -57,6 +57,64 @@ func BuildDefinition(imageName string, imagesDir string) (*ImageDefinition, erro
 	return &image, nil
 }
 
+func verifyDependencies(imageDefinition ImageDefinition, imageDefinitions map[string]ImageDefinition, currentStack map[string]bool) error {
+	if currentStack == nil {
+		currentStack = make(map[string]bool, 0)
+	}
+
+	if strings.HasPrefix(imageDefinition.Inherits, "external:") {
+		// we reached the end, all good!
+		return nil
+	}
+
+	if _, ok := currentStack[imageDefinition.Inherits]; ok {
+		// Cyclical dependency detected!
+		return fmt.Errorf("Image %s has a cyclical dependency", imageDefinition.Name)
+	}
+
+	// Make this image as having been traversed.
+	currentStack[imageDefinition.Name] = true
+
+	if parent, ok := imageDefinitions[imageDefinition.Inherits]; ok {
+		return verifyDependencies(parent, imageDefinitions, currentStack)
+	}
+
+	return fmt.Errorf("Image defintion %s inherits from %s, which doesn't exist", imageDefinition.Name, imageDefinition.Inherits)
+}
+
+// BuildAllDefinitions Return all the images in the image directory
+func BuildAllDefinitions(imagesDir string) (map[string]ImageDefinition, error) {
+	if len(imagesDir) == 0 {
+		return nil, fmt.Errorf("An image directory must be provided")
+	}
+
+	imageNames, err := utils.GetChildDirectories(imagesDir)
+
+	if err != nil {
+		return nil, err
+	}
+
+	imageDefinitions := make(map[string]ImageDefinition, 0)
+
+	for _, imageName := range imageNames {
+		imageDefinition, err := BuildDefinition(imageName, imagesDir)
+		if err != nil {
+			return nil, err
+		}
+		imageDefinitions[imageName] = *imageDefinition
+	}
+
+	// verify dependencies are satisfied and no circular dependencies
+	for _, imageDefinition := range imageDefinitions {
+		err := verifyDependencies(imageDefinition, imageDefinitions, nil)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return imageDefinitions, nil
+}
+
 // BuildImageLayer Run installation scripts on top of another image.
 func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefix string, packageCache string, environmentVariables map[string]string) error {
 
