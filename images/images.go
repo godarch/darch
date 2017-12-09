@@ -15,10 +15,11 @@ import (
 
 // ImageDefinition A struct representing an image to be built.
 type ImageDefinition struct {
-	Name      string
-	ImageDir  string
-	ImagesDir string
-	Inherits  []string
+	Name             string
+	ImageDir         string
+	ImagesDir        string
+	Inherits         string
+	InheritsExternal bool
 }
 
 type imageConfiguration struct {
@@ -52,18 +53,90 @@ func BuildDefinition(imageName string, imagesDir string) (*ImageDefinition, erro
 		return nil, err
 	}
 
-	image.Inherits = []string{
-		imageConfiguration.Inherits,
+	if strings.HasPrefix(imageConfiguration.Inherits, "external:") {
+		image.InheritsExternal = true
+		image.Inherits = imageConfiguration.Inherits[len("external:"):len(imageConfiguration.Inherits)]
+	} else {
+		image.InheritsExternal = false
+		image.Inherits = imageConfiguration.Inherits
 	}
 
 	return &image, nil
 }
 
+func verifyDependencies(imageDefinition ImageDefinition, imageDefinitions map[string]ImageDefinition, currentStack map[string]bool) error {
+	if currentStack == nil {
+		currentStack = make(map[string]bool, 0)
+	}
+
+	if imageDefinition.InheritsExternal {
+		// we reached the end, all good!
+		return nil
+	}
+
+	if _, ok := currentStack[imageDefinition.Inherits]; ok {
+		// Cyclical dependency detected!
+		return fmt.Errorf("Image %s has a cyclical dependency", imageDefinition.Name)
+	}
+
+	// Make this image as having been traversed.
+	currentStack[imageDefinition.Name] = true
+
+	if parent, ok := imageDefinitions[imageDefinition.Inherits]; ok {
+		return verifyDependencies(parent, imageDefinitions, currentStack)
+	}
+
+	return fmt.Errorf("Image defintion %s inherits from %s, which doesn't exist", imageDefinition.Name, imageDefinition.Inherits)
+}
+
+// BuildAllDefinitions Return all the images in the image directory
+func BuildAllDefinitions(imagesDir string) (map[string]ImageDefinition, error) {
+	if len(imagesDir) == 0 {
+		return nil, fmt.Errorf("An image directory must be provided")
+	}
+
+	imageNames, err := utils.GetChildDirectories(imagesDir)
+
+	if err != nil {
+		return nil, err
+	}
+
+	imageDefinitions := make(map[string]ImageDefinition, 0)
+
+	for _, imageName := range imageNames {
+		imageDefinition, err := BuildDefinition(imageName, imagesDir)
+		if err != nil {
+			return nil, err
+		}
+		imageDefinitions[imageName] = *imageDefinition
+	}
+
+	// verify dependencies are satisfied and no circular dependencies
+	for _, imageDefinition := range imageDefinitions {
+		err := verifyDependencies(imageDefinition, imageDefinitions, nil)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return imageDefinitions, nil
+}
+
 // BuildImageLayer Run installation scripts on top of another image.
-func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefix string, environmentVariables map[string]string) error {
-	inherits := imageDefinition.Inherits[0]
-	if strings.HasPrefix(inherits, "external:") {
-		inherits = inherits[len("external:"):len(inherits)]
+func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefix string, packageCache string, environmentVariables map[string]string) error {
+
+	if len(packageCache) > 0 {
+		if !utils.DirectoryExists(packageCache) {
+			err := os.MkdirAll(packageCache, os.ModePerm)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	inherits := imageDefinition.Inherits
+	if imageDefinition.InheritsExternal {
+		// No build prefix for externally referenced image.
 	} else {
 		inherits = buildPrefix + inherits
 	}
@@ -73,16 +146,49 @@ func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefi
 
 	tmpImageName := "darch-building-" + imageDefinition.Name
 
-	err := runCommand("docker", "run", "-d", "-v", imageDefinition.ImagesDir+":/images", "--privileged", "--name", tmpImageName, inherits)
+	arguements := make([]string, 0)
+	arguements = append(arguements, "run")
+	arguements = append(arguements, "-d")
+	arguements = append(arguements, "-v")
+	arguements = append(arguements, imageDefinition.ImagesDir+":/images")
+	if len(packageCache) > 0 {
+		arguements = append(arguements, "-v")
+		arguements = append(arguements, packageCache+":/packages")
+	}
+	arguements = append(arguements, "--privileged")
+	arguements = append(arguements, "--name")
+	arguements = append(arguements, tmpImageName)
+	arguements = append(arguements, inherits)
+	err := runCommand("docker", arguements...)
 	if err != nil {
 		return err
 	}
-	err = runCommand("docker", "exec", "--privileged", tmpImageName, "cp", "-rp", "/images", "/root.x86_64/")
+	// Now that we have the container running withour mounts, let's let arch-chroot
+	// know about them so they show up when the container does a chroot into the
+	// rootfs (/root.x86_64).
+	err = runCommand("docker", "exec", "--privileged", tmpImageName, "mkdir", "/root.x86_64/images/")
 	if err != nil {
 		destroyContainer(tmpImageName)
 		return err
 	}
-	arguements := make([]string, 0)
+	err = runCommand("docker", "exec", "--privileged", tmpImageName, "bash", "-c", "echo \"chroot_add_mount /images \\\"/root.x86_64/images\\\" --bind\" >> /arch-chroot-customizations")
+	if err != nil {
+		destroyContainer(tmpImageName)
+		return err
+	}
+	if len(packageCache) > 0 {
+		err = runCommand("docker", "exec", "--privileged", tmpImageName, "mkdir", "-p", "/root.x86_64/var/cache/pacman/pkg/")
+		if err != nil {
+			destroyContainer(tmpImageName)
+			return err
+		}
+		err = runCommand("docker", "exec", "--privileged", tmpImageName, "bash", "-c", "echo \"chroot_add_mount /packages \\\"/root.x86_64/var/cache/pacman/pkg/\\\" --bind\" >> /arch-chroot-customizations")
+		if err != nil {
+			destroyContainer(tmpImageName)
+			return err
+		}
+	}
+	arguements = make([]string, 0)
 	arguements = append(arguements, "exec")
 	arguements = append(arguements, "--privileged")
 	for environmentVariableName, environmentVariableValue := range environmentVariables {
@@ -90,7 +196,7 @@ func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefi
 		arguements = append(arguements, environmentVariableName+"="+environmentVariableValue)
 	}
 	arguements = append(arguements, tmpImageName)
-	arguements = append(arguements, "arch-chroot")
+	arguements = append(arguements, "arch-chroot-custom")
 	arguements = append(arguements, "/root.x86_64")
 	arguements = append(arguements, "/bin/bash")
 	arguements = append(arguements, "-c")

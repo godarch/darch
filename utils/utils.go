@@ -22,6 +22,26 @@ func ExpandPath(pathToExpand string) string {
 	return pathToExpand
 }
 
+// RemoveDuplicates Remove duplicate items from an array.
+func RemoveDuplicates(elements []string) []string {
+	// Use map to record duplicates as we find them.
+	encountered := map[string]bool{}
+	result := []string{}
+
+	for v := range elements {
+		if encountered[elements[v]] == true {
+			// Do not add duplicate.
+		} else {
+			// Record this element as an encountered element.
+			encountered[elements[v]] = true
+			// Append to result slice.
+			result = append(result, elements[v])
+		}
+	}
+	// Return the new slice.
+	return result
+}
+
 // DirectoryExists Returns true if the given path is a directory, and it exists.
 func DirectoryExists(directory string) bool {
 	if stat, err := os.Stat(directory); err == nil && stat.IsDir() {
@@ -183,4 +203,21 @@ func ConvertVariableStringsToMap(input []string) (map[string]string, error) {
 	}
 
 	return m, nil
+}
+
+// GetChildDirectories Gets child directories in the given directory
+func GetChildDirectories(path string) ([]string, error) {
+	directories := make([]string, 0)
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+	for _, f := range files {
+		if f.IsDir() {
+			if !strings.HasPrefix(f.Name(), ".") {
+				directories = append(directories, f.Name())
+			}
+		}
+	}
+	return directories, nil
 }

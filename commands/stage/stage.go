@@ -26,7 +26,7 @@ func Command() cli.Command {
 			cli.StringFlag{
 				Name:  "source, s",
 				Usage: "The location where the extract images are.",
-				Value: "/var/darch",
+				Value: "/var/darch/extracted",
 			},
 			cli.StringFlag{
 				Name:  "fstab",

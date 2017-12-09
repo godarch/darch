@@ -5,15 +5,17 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch file",
+            "name": "Launch",
             "type": "go",
             "request": "launch",
             "mode": "debug",
             "env":{
                 "GOPATH": "${workspaceRoot}/.go"
             },
-            "cwd": "./",
+            "cwd": "/home/pknopf/git/darch-images",
             "args": [
+                "inspect",
+                "plasma"
             ],
             "program": "${workspaceRoot}/darch.go"
         }

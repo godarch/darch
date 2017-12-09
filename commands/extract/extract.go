@@ -25,7 +25,7 @@ func Command() cli.Command {
 			cli.StringFlag{
 				Name:  "destination, d",
 				Usage: "The location to extract the image to.",
-				Value: "/var/darch",
+				Value: "/var/darch/extracted",
 			},
 		},
 		Action: func(c *cli.Context) error {
