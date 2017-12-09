@@ -3,7 +3,6 @@ package inspect
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"../../images"
 	"../../utils"
@@ -142,9 +141,9 @@ func parents(name string, imagesDir string, excludeExternal bool) error {
 
 	finished := false
 	for finished != true {
-		if strings.HasPrefix(current.Inherits, "external:") {
+		if current.InheritsExternal {
 			if !excludeExternal {
-				log.Println(current.Inherits[len("external:"):len(current.Inherits)])
+				log.Println(current.Inherits)
 			}
 			finished = true
 		} else {
