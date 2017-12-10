@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"sort"
+
 	"../../images"
 	"../../utils"
 	"github.com/disiqueira/gotree"
@@ -24,12 +26,15 @@ func parentsCommand() cli.Command {
 			cli.BoolFlag{
 				Name: "excludeExternal",
 			},
+			cli.BoolFlag{
+				Name: "reverse",
+			},
 		},
 		Action: func(c *cli.Context) error {
 			if len(c.Args()) != 1 {
 				return cli.NewExitError(fmt.Errorf("Unexpected arguements"), 1)
 			}
-			err := parents(c.Args().First(), c.String("imagesDir"), c.Bool("excludeExternal"))
+			err := parents(c.Args().First(), c.String("imagesDir"), c.Bool("excludeExternal"), c.Bool("reverse"))
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
@@ -49,12 +54,15 @@ func childrenCommand() cli.Command {
 				Usage: "Location of the images.",
 				Value: ".",
 			},
+			cli.BoolFlag{
+				Name: "reverse",
+			},
 		},
 		Action: func(c *cli.Context) error {
 			if len(c.Args()) != 1 {
 				return cli.NewExitError(fmt.Errorf("Unexpected arguements"), 1)
 			}
-			err := children(c.Args().First(), c.String("imagesDir"))
+			err := children(c.Args().First(), c.String("imagesDir"), c.Bool("reverse"))
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
@@ -115,7 +123,7 @@ func Command() cli.Command {
 	}
 }
 
-func parents(name string, imagesDir string, excludeExternal bool) error {
+func parents(name string, imagesDir string, excludeExternal bool, reverse bool) error {
 
 	if len(name) == 0 {
 		return fmt.Errorf("Name is required")
@@ -138,24 +146,34 @@ func parents(name string, imagesDir string, excludeExternal bool) error {
 	if !ok {
 		return fmt.Errorf("Image %s doesn't exist", name)
 	}
+
+	results := make([]string, 0)
 
 	finished := false
 	for finished != true {
 		if current.InheritsExternal {
 			if !excludeExternal {
-				log.Println(current.Inherits)
+				results = append(results, current.Inherits)
 			}
 			finished = true
 		} else {
 			current = imageDefinitions[current.Inherits]
-			log.Println(current.Name)
+			results = append(results, current.Name)
 		}
+	}
+
+	if reverse {
+		sort.Sort(sort.Reverse(sort.StringSlice(results)))
+	}
+
+	for _, result := range results {
+		log.Println(result)
 	}
 
 	return nil
 }
 
-func children(name string, imagesDir string) error {
+func children(name string, imagesDir string, reverse bool) error {
 	if len(name) == 0 {
 		return fmt.Errorf("Name is required")
 	}
@@ -178,10 +196,20 @@ func children(name string, imagesDir string) error {
 		return fmt.Errorf("Image %s doesn't exist", name)
 	}
 
+	results := make([]string, 0)
+
 	for _, imageDefinition := range imageDefinitions {
 		if imageDefinition.Inherits == current.Name {
-			log.Println(imageDefinition.Name)
+			results = append(results, imageDefinition.Name)
 		}
+	}
+
+	if reverse {
+		sort.Sort(sort.Reverse(sort.StringSlice(results)))
+	}
+
+	for _, result := range results {
+		log.Println(result)
 	}
 
 	return err
