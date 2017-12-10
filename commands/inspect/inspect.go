@@ -19,12 +19,12 @@ func parentsCommand() cli.Command {
 		ArgsUsage: "IMAGE_NAME",
 		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name:  "imagesDir, d",
+				Name:  "images-dir, d",
 				Usage: "Location of the images.",
 				Value: ".",
 			},
 			cli.BoolFlag{
-				Name: "excludeExternal",
+				Name: "exclude-external",
 			},
 			cli.BoolFlag{
 				Name: "reverse",
@@ -34,7 +34,7 @@ func parentsCommand() cli.Command {
 			if len(c.Args()) != 1 {
 				return cli.NewExitError(fmt.Errorf("Unexpected arguements"), 1)
 			}
-			err := parents(c.Args().First(), c.String("imagesDir"), c.Bool("excludeExternal"), c.Bool("reverse"))
+			err := parents(c.Args().First(), c.String("images-dir"), c.Bool("exclude-external"), c.Bool("reverse"))
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
@@ -50,7 +50,7 @@ func childrenCommand() cli.Command {
 		ArgsUsage: "IMAGE_NAME",
 		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name:  "imagesDir, d",
+				Name:  "images-dir, d",
 				Usage: "Location of the images.",
 				Value: ".",
 			},
@@ -62,7 +62,7 @@ func childrenCommand() cli.Command {
 			if len(c.Args()) != 1 {
 				return cli.NewExitError(fmt.Errorf("Unexpected arguements"), 1)
 			}
-			err := children(c.Args().First(), c.String("imagesDir"), c.Bool("reverse"))
+			err := children(c.Args().First(), c.String("images-dir"), c.Bool("reverse"))
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
@@ -77,13 +77,13 @@ func treeCommand() cli.Command {
 		Usage: "Display all images in a tree.",
 		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name:  "imagesDir, d",
+				Name:  "images-dir, d",
 				Usage: "Location of the images.",
 				Value: ".",
 			},
 		},
 		Action: func(c *cli.Context) error {
-			err := tree(c.String("imagesDir"))
+			err := tree(c.String("images-dir"))
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
@@ -100,7 +100,7 @@ func Command() cli.Command {
 		ArgsUsage: "IMAGE_NAME",
 		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name:  "imagesDir, d",
+				Name:  "images-dir, d",
 				Usage: "Location of the images.",
 				Value: ".",
 			},
@@ -114,7 +114,7 @@ func Command() cli.Command {
 			if len(c.Args()) != 1 {
 				return cli.NewExitError(fmt.Errorf("Unexpected arguements"), 1)
 			}
-			err := inspect(c.Args().First(), c.String("imagesDir"))
+			err := inspect(c.Args().First(), c.String("images-dir"))
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
