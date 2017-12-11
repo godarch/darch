@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -40,6 +41,25 @@ func RemoveDuplicates(elements []string) []string {
 	}
 	// Return the new slice.
 	return result
+}
+
+// Reverse Reverses the array
+func Reverse(elements []string) []string {
+	for i := len(elements)/2 - 1; i >= 0; i-- {
+		opp := len(elements) - 1 - i
+		elements[i], elements[opp] = elements[opp], elements[i]
+	}
+	return elements
+}
+
+// Contains Returns true of array contains the given string
+func Contains(arr []string, val string) bool {
+	for _, a := range arr {
+		if a == val {
+			return true
+		}
+	}
+	return false
 }
 
 // DirectoryExists Returns true if the given path is a directory, and it exists.
@@ -219,5 +239,6 @@ func GetChildDirectories(path string) ([]string, error) {
 			}
 		}
 	}
+	sort.Strings(directories)
 	return directories, nil
 }

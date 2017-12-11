@@ -163,7 +163,7 @@ func parents(name string, imagesDir string, excludeExternal bool, reverse bool) 
 	}
 
 	if reverse {
-		sort.Sort(sort.Reverse(sort.StringSlice(results)))
+		results = utils.Reverse(results)
 	}
 
 	for _, result := range results {
