@@ -1,0 +1,9 @@
+#!/bin/bash
+
+mkdir -p "/root.x86_64/images/"
+echo "chroot_add_mount /images \"/root.x86_64/images/\" --bind" >> /arch-chroot-customizations
+
+if [ -e "/packages" ]; then
+    mkdir -p "/root.x86_64/var/cache/pacman/pkg/"
+    echo "chroot_add_mount /packages \"/root.x86_64/var/cache/pacman/pkg/\" --bind" >> /arch-chroot-customizations
+fi

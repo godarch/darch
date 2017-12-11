@@ -175,44 +175,33 @@ func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefi
 
 	tmpImageName := "darch-building-" + imageDefinition.Name
 
-	arguements := make([]string, 0)
-	arguements = append(arguements, "run")
-	arguements = append(arguements, "-d")
-	arguements = append(arguements, volumeArguments...)
-	arguements = append(arguements, "--privileged")
-	arguements = append(arguements, "--name")
-	arguements = append(arguements, tmpImageName)
-	arguements = append(arguements, inherits)
-	err := runCommand("docker", arguements...)
+	err := runCommand("docker", joinStringArrays(
+		[]string{
+			"run",
+			"-d",
+		},
+		volumeArguments,
+		[]string{
+			"--privileged",
+			"--name",
+			tmpImageName,
+			inherits,
+		},
+	)...)
 	if err != nil {
 		return err
 	}
 	// Now that we have the container running withour mounts, let's let arch-chroot
 	// know about them so they show up when the container does a chroot into the
 	// rootfs (/root.x86_64).
-	err = runCommand("docker", "exec", "--privileged", tmpImageName, "mkdir", "/root.x86_64/images/")
+	err = runCommand("docker", "exec", "--privileged", tmpImageName, "/darch-prepare")
 	if err != nil {
 		destroyContainer(tmpImageName)
 		return err
 	}
-	err = runCommand("docker", "exec", "--privileged", tmpImageName, "bash", "-c", "echo \"chroot_add_mount /images \\\"/root.x86_64/images\\\" --bind\" >> /arch-chroot-customizations")
-	if err != nil {
-		destroyContainer(tmpImageName)
-		return err
-	}
-	if len(packageCache) > 0 {
-		err = runCommand("docker", "exec", "--privileged", tmpImageName, "mkdir", "-p", "/root.x86_64/var/cache/pacman/pkg/")
-		if err != nil {
-			destroyContainer(tmpImageName)
-			return err
-		}
-		err = runCommand("docker", "exec", "--privileged", tmpImageName, "bash", "-c", "echo \"chroot_add_mount /packages \\\"/root.x86_64/var/cache/pacman/pkg/\\\" --bind\" >> /arch-chroot-customizations")
-		if err != nil {
-			destroyContainer(tmpImageName)
-			return err
-		}
-	}
-	arguements = make([]string, 0)
+
+	// Make the image
+	arguements := make([]string, 0)
 	arguements = append(arguements, "exec")
 	arguements = append(arguements, "--privileged")
 	arguements = append(arguements, environmentArguements...)
@@ -227,23 +216,22 @@ func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefi
 		destroyContainer(tmpImageName)
 		return err
 	}
-	err = runCommand("docker", "exec", "--privileged", tmpImageName, "rm", "-r", "/root.x86_64/images")
-	if err != nil {
-		destroyContainer(tmpImageName)
-		return err
-	}
-	err = runCommand("docker", "exec", "--privileged", tmpImageName, "rm", "-r", "-f", "/root.x86_64/var/cache/pacman/pkg/")
+
+	// Tear the container down
+	err = runCommand("docker", "exec", "--privileged", tmpImageName, "/darch-teardown")
 	if err != nil {
 		destroyContainer(tmpImageName)
 		return err
 	}
 
+	// Commit the container
 	err = runCommand("docker", "commit", tmpImageName, buildPrefix+imageDefinition.Name)
 	if err != nil {
 		destroyContainer(tmpImageName)
 		return err
 	}
 
+	// And tag it
 	for _, tag := range tags {
 		err = runCommand("docker", "tag", imageDefinition.Name, buildPrefix+imageDefinition.Name+":"+tag)
 		if err != nil {

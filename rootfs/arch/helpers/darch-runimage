@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -x
+
+IMAGE_NAME="$1"
+
+arch-chroot-custom /root.x86_64 /bin/bash -c "cd /images/$IMAGE_NAME/ && ./script"

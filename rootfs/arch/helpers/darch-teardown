@@ -1,0 +1,4 @@
+#!/bin/bash
+
+rm -r "/root.x86_64/images/"
+rm -r -f "/root.x86_64/var/cache/pacman/pkg/"
