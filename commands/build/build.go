@@ -15,7 +15,7 @@ func Command() cli.Command {
 	return cli.Command{
 		Name:      "build",
 		Usage:     "Build an image.",
-		ArgsUsage: "IMAGE_NAME",
+		ArgsUsage: "IMAGE_NAME*N",
 		Flags: []cli.Flag{
 			cli.StringFlag{
 				Name:  "images-dir, d",
@@ -42,14 +42,11 @@ func Command() cli.Command {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			if len(c.Args()) != 1 {
-				return cli.NewExitError(fmt.Errorf("Unexpected arguements"), 1)
-			}
 			environmentVaribles, err := utils.ConvertVariableStringsToMap(c.StringSlice("environment"))
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
-			err = build(c.Args().First(), c.String("images-dir"), strings.Split(c.String("tags"), ","), c.String("image-prefix"), c.String("package-cache"), environmentVaribles)
+			err = build(c.Args(), c.String("images-dir"), strings.Split(c.String("tags"), ","), c.String("image-prefix"), c.String("package-cache"), environmentVaribles)
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
@@ -58,9 +55,9 @@ func Command() cli.Command {
 	}
 }
 
-func build(name string, imagesDir string, tags []string, imagePrefix string, packageCache string, environmentVariables map[string]string) error {
-	if len(name) == 0 {
-		return fmt.Errorf("Name is required")
+func build(imageNames []string, imagesDir string, tags []string, imagePrefix string, packageCache string, environmentVariables map[string]string) error {
+	if len(imageNames) == 0 {
+		return fmt.Errorf("You must provide at least one image")
 	}
 
 	if len(imagesDir) == 0 {
@@ -69,7 +66,20 @@ func build(name string, imagesDir string, tags []string, imagePrefix string, pac
 
 	imagesDir = utils.ExpandPath(imagesDir)
 
-	log.Println("Name: " + name)
+	imageDefinitions, err := images.BuildAllDefinitions(imagesDir)
+	if err != nil {
+		return err
+	}
+
+	// Make sure the provided images exist
+	for _, imageName := range imageNames {
+		_, ok := imageDefinitions[imageName]
+		if !ok {
+			return fmt.Errorf("Image %s doesn't exist", imageName)
+		}
+	}
+
+	log.Println("Name: " + strings.Join(imageNames, ","))
 	log.Println("Images directory: " + imagesDir)
 	log.Println("Image prefix: " + imagePrefix)
 
@@ -82,21 +92,17 @@ func build(name string, imagesDir string, tags []string, imagePrefix string, pac
 		log.Println("Tags: none")
 	}
 
-	imageDefinition, err := images.BuildDefinition(name, imagesDir)
+	for _, imageName := range imageNames {
+		err = images.BuildImageLayer(
+			imageDefinitions[imageName],
+			tags,
+			imagePrefix,
+			packageCache,
+			environmentVariables)
 
-	if err != nil {
-		return cli.NewExitError(err, 1)
-	}
-
-	err = images.BuildImageLayer(
-		imageDefinition,
-		tags,
-		imagePrefix,
-		packageCache,
-		environmentVariables)
-
-	if err != nil {
-		return cli.NewExitError(err, 1)
+		if err != nil {
+			return cli.NewExitError(err, 1)
+		}
 	}
 
 	return nil
