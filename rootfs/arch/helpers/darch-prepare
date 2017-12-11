@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 mkdir -p "/root.x86_64/images/"
 echo "chroot_add_mount /images \"/root.x86_64/images/\" --bind" >> /arch-chroot-customizations

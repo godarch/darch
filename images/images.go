@@ -191,27 +191,26 @@ func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefi
 	if err != nil {
 		return err
 	}
-	// Now that we have the container running withour mounts, let's let arch-chroot
-	// know about them so they show up when the container does a chroot into the
-	// rootfs (/root.x86_64).
+	// Prep the container
 	err = runCommand("docker", "exec", "--privileged", tmpImageName, "/darch-prepare")
 	if err != nil {
 		destroyContainer(tmpImageName)
 		return err
 	}
 
-	// Make the image
-	arguements := make([]string, 0)
-	arguements = append(arguements, "exec")
-	arguements = append(arguements, "--privileged")
-	arguements = append(arguements, environmentArguements...)
-	arguements = append(arguements, tmpImageName)
-	arguements = append(arguements, "arch-chroot-custom")
-	arguements = append(arguements, "/root.x86_64")
-	arguements = append(arguements, "/bin/bash")
-	arguements = append(arguements, "-c")
-	arguements = append(arguements, "cd /images/"+imageDefinition.Name+" && ./script")
-	err = runCommand("docker", arguements...)
+	// Run the image scripts
+	err = runCommand("docker", joinStringArrays(
+		[]string{
+			"exec",
+			"--privileged",
+		},
+		environmentArguements,
+		[]string{
+			tmpImageName,
+			"/darch-runimage",
+			imageDefinition.Name,
+		},
+	)...)
 	if err != nil {
 		destroyContainer(tmpImageName)
 		return err
