@@ -131,7 +131,7 @@ func joinStringArrays(array ...[]string) []string {
 }
 
 // BuildImageLayer Run installation scripts on top of another image.
-func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefix string, packageCache string, environmentVariables map[string]string) error {
+func BuildImageLayer(imageDefinition ImageDefinition, tags []string, buildPrefix string, packageCache string, environmentVariables map[string]string) error {
 
 	if len(packageCache) > 0 {
 		if !utils.DirectoryExists(packageCache) {
