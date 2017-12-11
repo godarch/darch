@@ -232,7 +232,7 @@ func BuildImageLayer(imageDefinition ImageDefinition, tags []string, buildPrefix
 
 	// And tag it
 	for _, tag := range tags {
-		err = runCommand("docker", "tag", imageDefinition.Name, buildPrefix+imageDefinition.Name+":"+tag)
+		err = runCommand("docker", "tag", buildPrefix+imageDefinition.Name, buildPrefix+imageDefinition.Name+":"+tag)
 		if err != nil {
 			destroyContainer(tmpImageName)
 			return err
