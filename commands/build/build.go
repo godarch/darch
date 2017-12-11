@@ -18,7 +18,7 @@ func Command() cli.Command {
 		ArgsUsage: "IMAGE_NAME",
 		Flags: []cli.Flag{
 			cli.StringFlag{
-				Name:  "imagesDir, d",
+				Name:  "images-dir, d",
 				Usage: "Location of the images to build.",
 				Value: ".",
 			},
@@ -28,12 +28,12 @@ func Command() cli.Command {
 				Value: "local",
 			},
 			cli.StringFlag{
-				Name:  "imagePrefix, p",
+				Name:  "image-prefix, p",
 				Usage: "Prefix for built images. For example, a value of \"pauldotknopf/darch-\" while building image \"base\", the generated image will be named \"pauldotknopf/darch-base\".",
 				Value: "",
 			},
 			cli.StringFlag{
-				Name:  "packageCache, c",
+				Name:  "package-cache, c",
 				Usage: "Location where package caches are stored. This speeds up builds, preventing downloading.",
 				Value: "/var/darch/cache/packages",
 			},
@@ -49,7 +49,7 @@ func Command() cli.Command {
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
-			err = build(c.Args().First(), c.String("imagesDir"), strings.Split(c.String("tags"), ","), c.String("imagePrefix"), c.String("packageCache"), environmentVaribles)
+			err = build(c.Args().First(), c.String("images-dir"), strings.Split(c.String("tags"), ","), c.String("image-prefix"), c.String("package-cache"), environmentVaribles)
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}

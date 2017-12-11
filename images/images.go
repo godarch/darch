@@ -122,6 +122,14 @@ func BuildAllDefinitions(imagesDir string) (map[string]ImageDefinition, error) {
 	return imageDefinitions, nil
 }
 
+func joinStringArrays(array ...[]string) []string {
+	result := make([]string, 0)
+	for _, item := range array {
+		result = append(result, item...)
+	}
+	return result
+}
+
 // BuildImageLayer Run installation scripts on top of another image.
 func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefix string, packageCache string, environmentVariables map[string]string) error {
 
@@ -144,85 +152,85 @@ func BuildImageLayer(imageDefinition *ImageDefinition, tags []string, buildPrefi
 	log.Println("Building image " + buildPrefix + imageDefinition.Name + ".")
 	log.Println("Using parent image " + inherits + ".")
 
+	// Build the set of arguments that contain the local volumes we are going to mount
+	volumeArguments := []string{
+		"-v",
+		imageDefinition.ImagesDir + ":/images",
+	}
+	if len(packageCache) > 0 {
+		volumeArguments = append(volumeArguments, []string{
+			"-v",
+			packageCache + ":/packages",
+		}...)
+	}
+
+	// Build the set of environment variables that we are going to use
+	environmentArguements := make([]string, 0)
+	for environmentVariableName, environmentVariableValue := range environmentVariables {
+		environmentArguements = append(environmentArguements, []string{
+			"-e",
+			environmentVariableName + "=" + environmentVariableValue,
+		}...)
+	}
+
 	tmpImageName := "darch-building-" + imageDefinition.Name
 
-	arguements := make([]string, 0)
-	arguements = append(arguements, "run")
-	arguements = append(arguements, "-d")
-	arguements = append(arguements, "-v")
-	arguements = append(arguements, imageDefinition.ImagesDir+":/images")
-	if len(packageCache) > 0 {
-		arguements = append(arguements, "-v")
-		arguements = append(arguements, packageCache+":/packages")
-	}
-	arguements = append(arguements, "--privileged")
-	arguements = append(arguements, "--name")
-	arguements = append(arguements, tmpImageName)
-	arguements = append(arguements, inherits)
-	err := runCommand("docker", arguements...)
+	err := runCommand("docker", joinStringArrays(
+		[]string{
+			"run",
+			"-d",
+		},
+		volumeArguments,
+		[]string{
+			"--privileged",
+			"--name",
+			tmpImageName,
+			inherits,
+		},
+	)...)
 	if err != nil {
 		return err
 	}
-	// Now that we have the container running withour mounts, let's let arch-chroot
-	// know about them so they show up when the container does a chroot into the
-	// rootfs (/root.x86_64).
-	err = runCommand("docker", "exec", "--privileged", tmpImageName, "mkdir", "/root.x86_64/images/")
-	if err != nil {
-		destroyContainer(tmpImageName)
-		return err
-	}
-	err = runCommand("docker", "exec", "--privileged", tmpImageName, "bash", "-c", "echo \"chroot_add_mount /images \\\"/root.x86_64/images\\\" --bind\" >> /arch-chroot-customizations")
-	if err != nil {
-		destroyContainer(tmpImageName)
-		return err
-	}
-	if len(packageCache) > 0 {
-		err = runCommand("docker", "exec", "--privileged", tmpImageName, "mkdir", "-p", "/root.x86_64/var/cache/pacman/pkg/")
-		if err != nil {
-			destroyContainer(tmpImageName)
-			return err
-		}
-		err = runCommand("docker", "exec", "--privileged", tmpImageName, "bash", "-c", "echo \"chroot_add_mount /packages \\\"/root.x86_64/var/cache/pacman/pkg/\\\" --bind\" >> /arch-chroot-customizations")
-		if err != nil {
-			destroyContainer(tmpImageName)
-			return err
-		}
-	}
-	arguements = make([]string, 0)
-	arguements = append(arguements, "exec")
-	arguements = append(arguements, "--privileged")
-	for environmentVariableName, environmentVariableValue := range environmentVariables {
-		arguements = append(arguements, "-e")
-		arguements = append(arguements, environmentVariableName+"="+environmentVariableValue)
-	}
-	arguements = append(arguements, tmpImageName)
-	arguements = append(arguements, "arch-chroot-custom")
-	arguements = append(arguements, "/root.x86_64")
-	arguements = append(arguements, "/bin/bash")
-	arguements = append(arguements, "-c")
-	arguements = append(arguements, "cd /images/"+imageDefinition.Name+" && ./script")
-	err = runCommand("docker", arguements...)
-	if err != nil {
-		destroyContainer(tmpImageName)
-		return err
-	}
-	err = runCommand("docker", "exec", "--privileged", tmpImageName, "rm", "-r", "/root.x86_64/images")
-	if err != nil {
-		destroyContainer(tmpImageName)
-		return err
-	}
-	err = runCommand("docker", "exec", "--privileged", tmpImageName, "rm", "-r", "-f", "/root.x86_64/var/cache/pacman/pkg/")
+	// Prep the container
+	err = runCommand("docker", "exec", "--privileged", tmpImageName, "/darch-prepare")
 	if err != nil {
 		destroyContainer(tmpImageName)
 		return err
 	}
 
+	// Run the image scripts
+	err = runCommand("docker", joinStringArrays(
+		[]string{
+			"exec",
+			"--privileged",
+		},
+		environmentArguements,
+		[]string{
+			tmpImageName,
+			"/darch-runimage",
+			imageDefinition.Name,
+		},
+	)...)
+	if err != nil {
+		destroyContainer(tmpImageName)
+		return err
+	}
+
+	// Tear the container down
+	err = runCommand("docker", "exec", "--privileged", tmpImageName, "/darch-teardown")
+	if err != nil {
+		destroyContainer(tmpImageName)
+		return err
+	}
+
+	// Commit the container
 	err = runCommand("docker", "commit", tmpImageName, buildPrefix+imageDefinition.Name)
 	if err != nil {
 		destroyContainer(tmpImageName)
 		return err
 	}
 
+	// And tag it
 	for _, tag := range tags {
 		err = runCommand("docker", "tag", imageDefinition.Name, buildPrefix+imageDefinition.Name+":"+tag)
 		if err != nil {

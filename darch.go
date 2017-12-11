@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"./commands/build"
+	"./commands/builddep"
 	"./commands/extract"
 	"./commands/inspect"
 	"./commands/stage"
@@ -34,6 +35,7 @@ func main() {
 		extract.Command(),
 		inspect.Command(),
 		stage.Command(),
+		builddep.Command(),
 		cli.Command{
 			Name:  "version",
 			Usage: "Print version information about darch.",

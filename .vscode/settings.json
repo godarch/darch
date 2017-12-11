@@ -1,3 +1,4 @@
 {
-    "go.gopath": "${workspaceRoot}/.go"
+    "go.gopath": "${workspaceRoot}/.go",
+    "terminal.integrated.fontSize": 15
 }
