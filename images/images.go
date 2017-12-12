@@ -133,6 +133,10 @@ func joinStringArrays(array ...[]string) []string {
 // BuildImageLayer Run installation scripts on top of another image.
 func BuildImageLayer(imageDefinition ImageDefinition, tags []string, buildPrefix string, packageCache string, environmentVariables map[string]string) error {
 
+	if len(tags) == 0 {
+		return fmt.Errorf("You must provide at least one tag")
+	}
+
 	if len(packageCache) > 0 {
 		if !utils.DirectoryExists(packageCache) {
 			err := os.MkdirAll(packageCache, os.ModePerm)
@@ -146,7 +150,7 @@ func BuildImageLayer(imageDefinition ImageDefinition, tags []string, buildPrefix
 	if imageDefinition.InheritsExternal {
 		// No build prefix for externally referenced image.
 	} else {
-		inherits = buildPrefix + inherits
+		inherits = buildPrefix + inherits + ":" + tags[0]
 	}
 
 	log.Println("Building image " + buildPrefix + imageDefinition.Name + ".")
@@ -224,14 +228,14 @@ func BuildImageLayer(imageDefinition ImageDefinition, tags []string, buildPrefix
 	}
 
 	// Commit the container
-	err = runCommand("docker", "commit", tmpImageName, buildPrefix+imageDefinition.Name)
+	err = runCommand("docker", "commit", tmpImageName, buildPrefix+imageDefinition.Name+":"+tags[0])
 	if err != nil {
 		destroyContainer(tmpImageName)
 		return err
 	}
 
 	// And tag it
-	for _, tag := range tags {
+	for _, tag := range tags[1:] {
 		err = runCommand("docker", "tag", buildPrefix+imageDefinition.Name, buildPrefix+imageDefinition.Name+":"+tag)
 		if err != nil {
 			destroyContainer(tmpImageName)
