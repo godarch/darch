@@ -9,6 +9,7 @@ ADD rootfs.tar.gz /
 
 # Add custom arch-chroot that handles custom mounts
 ADD arch-chroot-custom /usr/sbin/
+ADD arch-chroot /usr/sbin
 
 # Add our cpio hooks to be used when building the image
 ADD initcpio-hooks/ /initcpio-hooks
