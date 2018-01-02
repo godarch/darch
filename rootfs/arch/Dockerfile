@@ -5,7 +5,7 @@ RUN pacman -Syu --noconfirm
 RUN pacman -S --noconfirm arch-install-scripts squashfs-tools
 
 # Add our rootfs
-ADD rootfs.tar.gz /
+RUN curl https://mirrors.kernel.org/archlinux/iso/latest/archlinux-bootstrap-2018.01.01-x86_64.tar.gz | tar xpz
 
 # Add custom arch-chroot that handles custom mounts
 ADD arch-chroot-custom /usr/sbin/
