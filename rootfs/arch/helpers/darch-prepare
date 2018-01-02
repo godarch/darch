@@ -8,3 +8,10 @@ if [ -e "/packages" ]; then
     mkdir -p "/root.x86_64/var/cache/pacman/pkg/"
     echo "chroot_add_mount /packages \"/root.x86_64/var/cache/pacman/pkg/\" --bind" >> /arch-chroot-customizations
 fi
+
+# Add our custom user, used for building...
+arch-chroot-custom /root.x86_64 /bin/bash -c "useradd -u 999 dummybuilder"
+arch-chroot-custom /root.x86_64 /bin/bash -c "mkdir -p /home/dummybuilder/"
+# And give him password-free sudo access.
+mkdir -p /root.x86_64/etc/sudoers.d/
+echo "dummybuilder ALL=(ALL) NOPASSWD:ALL" > /root.x86_64/etc/sudoers.d/dummybuilder

@@ -1,5 +1,9 @@
 #!/bin/bash
 set -e
 
+# delete our temp user
+arch-chroot-custom /root.x86_64 /bin/bash -c "userdel -r -f dummybuilder"
+rm /root.x86_64/etc/sudoers.d/dummybuilder
+
 rm -r "/root.x86_64/images/"
 rm -r -f "/root.x86_64/var/cache/pacman/pkg/"
