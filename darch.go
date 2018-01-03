@@ -7,7 +7,6 @@ import (
 
 	"./commands/build"
 	"./commands/builddep"
-	"./commands/extract"
 	"./commands/inspect"
 	"./commands/stage"
 	"github.com/urfave/cli"
@@ -32,7 +31,6 @@ func main() {
 	app.HideVersion = true
 	app.Commands = []cli.Command{
 		build.Command(),
-		extract.Command(),
 		inspect.Command(),
 		stage.Command(),
 		builddep.Command(),

@@ -23,5 +23,6 @@ ADD helpers/darch-longrunning /
 ADD helpers/darch-prepare /
 ADD helpers/darch-runimage /
 ADD helpers/darch-teardown /
+ADD helpers/darch-extract /
 
 CMD [ "/darch-longrunning" ]
