@@ -6,7 +6,9 @@ import (
 	"path"
 
 	"../../images"
+	"../../stage"
 	"github.com/kennygrant/sanitize"
+	"github.com/ryanuber/columnize"
 	"github.com/urfave/cli"
 )
 
@@ -35,9 +37,9 @@ func uploadCommand() cli.Command {
 func listCommand() cli.Command {
 	return cli.Command{
 		Name:  "list",
-		Usage: "List the images current staged.",
+		Usage: "List the images currently staged.",
 		Action: func(c *cli.Context) error {
-			err := upload(c.Args().First(), c.String("tag"))
+			err := list()
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
@@ -53,6 +55,7 @@ func Command() cli.Command {
 		Usage: "Commands that help manage the stage.",
 		Subcommands: []cli.Command{
 			uploadCommand(),
+			listCommand(),
 		},
 	}
 }
@@ -79,6 +82,28 @@ func upload(name string, tag string) error {
 	if err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func list() error {
+	stagedItems, err := stage.GetAllStaged("/var/darch/staged")
+
+	if err != nil {
+		return err
+	}
+
+	result := []string{
+		"Name | Tag | Path | Kernel | InitramFS | RootFS",
+	}
+
+	for _, stagedItem := range stagedItems {
+		for _, stagedItemTag := range stagedItem.Tags {
+			result = append(result, stagedItem.Name+" | "+stagedItemTag.Name+" | "+stagedItemTag.Path+" | "+stagedItemTag.BootKernel+" | "+stagedItemTag.BootInitRAMFS+" | "+stagedItemTag.BootRootFS)
+		}
+	}
+
+	fmt.Println(columnize.SimpleFormat(result))
 
 	return nil
 }
