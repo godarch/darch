@@ -4,24 +4,63 @@ set -e
 # This gives us the "linux_entry" command
 source /etc/grub.d/10_linux > /dev/null 2>&1
 
-for i in $(find /boot/darch/ -type d); do
-    linux="$i/vmlinuz-linux"
-    if [ ! -f $linux ]; then
-        continue
-    fi
-    gettext_printf "Found linux image: %s\n" "$linux" >&2
-    basename=`basename $linux`
-    dirname=`dirname $linux`
-    rel_dirname=`make_system_path_relative_to_its_root $dirname`
-    version=`echo $basename | sed -e "s,vmlinuz-,,g"`
-    alt_version=`echo $version | sed -e "s,\.old$,,g"`
-    linux_root_device_thisversion="${LINUX_ROOT_DEVICE}"
-    initrd=initramfs-linux.img
+# Read in config file stripping away leading forward slashes
+data=$(darch stage list | tail -n +2)
 
+while read -r entry; do
+    # Extract all our image variables
+    darch_image_name=$(echo $entry | awk '{print $1}')
+    darch_tag_name=$(echo $entry | awk '{print $2}')
+    darch_tag_path=$(echo $entry | awk '{print $3}')
+    darch_kernel=$(echo $entry | awk '{print $4}')
+    darch_initramfs=$(echo $entry | awk '{print $5}')
+    darch_rootfs=$(echo $entry | awk '{print $6}')
 
-    darch_source_block_device=`df --output=source $i | tail -1`
+    # Build the command line needed for our custom squashfs handler
+    darch_source_block_device=`df --output=source $darch_tag_path | tail -1`
     darch_source_uuid=`blkid $darch_source_block_device | sed -n 's/.* UUID=\"\([^\"]*\)\".*/\1/p'`
-    darch_source_absolute=`echo ${i#$(df $i --output=target | tail -1)}`
+    darch_source_absolute=`echo ${darch_tag_path#$(df $darch_tag_path --output=target | tail -1)}`
+    if [[ "$darch_source_absolute" != "/*" ]]; then
+        darch_source_absolute="/$darch_source_absolute"
+    fi
     darch_cmdline="darchdir=UUID=$darch_source_uuid:$darch_source_absolute"
-    linux_entry "Darch - $rel_dirname" "${version}" "simple" "${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT} $darch_cmdline"
-done
+
+    # Need for the "linux_entry" command to properly echo a menu entry.
+    version=`echo $darch_kernel | sed -e "s,vmlinuz-,,g"`
+    rel_dirname=$darch_tag_path
+    basename=$darch_kernel
+
+    # Tell linux_entry to configure a new root, where our initramfs/vmlinux exists.
+    GRUB_DEVICE_BOOT_OLD=$GRUB_DEVICE_BOOT
+    GRUB_DEVICE_BOOT=$darch_source_block_device
+    # Clear this, because linux_entry caches old value
+    prepare_boot_cache=
+    
+    linux_entry "Darch - $darch_image_name:$darch_tag_name" "$version" "simple" "${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT} $darch_cmdline"
+    
+    GRUB_DEVICE_BOOT=$GRUB_DEVICE_BOOT_OLD
+    prepare_boot_cache=
+
+done <<< "$data"
+
+#for i in $(find /boot/darch/ -type d); do
+#    linux="$i/vmlinuz-linux"
+#    if [ ! -f $linux ]; then
+#        continue
+#    fi
+#    gettext_printf "Found linux image: %s\n" "$linux" >&2
+#    basename=`basename $linux`
+#    dirname=`dirname $linux`
+#    rel_dirname=`make_system_path_relative_to_its_root $dirname`
+#    version=`echo $basename | sed -e "s,vmlinuz-,,g"`
+#    alt_version=`echo $version | sed -e "s,\.old$,,g"`
+#    linux_root_device_thisversion="${LINUX_ROOT_DEVICE}"
+#    initrd=initramfs-linux.img
+#
+#
+#    darch_source_block_device=`df --output=source $i | tail -1`
+#    darch_source_uuid=`blkid $darch_source_block_device | sed -n 's/.* UUID=\"\([^\"]*\)\".*/\1/p'`
+#    darch_source_absolute=`echo ${i#$(df $i --output=target | tail -1)}`
+#    darch_cmdline="darchdir=UUID=$darch_source_uuid:$darch_source_absolute"
+#    linux_entry "Darch - $rel_dirname" "${version}" "simple" "${GRUB_CMDLINE_LINUX} ${GRUB_CMDLINE_LINUX_DEFAULT} $darch_cmdline"
+#done
