@@ -4,7 +4,7 @@ set -e
 # This gives us the "linux_entry" command
 source /etc/grub.d/10_linux > /dev/null 2>&1
 
-# Read in config file stripping away leading forward slashes
+# Get a list of staged items from darch
 data=$(darch stage list | tail -n +2)
 
 while read -r entry; do
@@ -29,7 +29,8 @@ while read -r entry; do
     version=`echo $darch_kernel | sed -e "s,vmlinuz-,,g"`
     rel_dirname=$darch_tag_path
     basename=$darch_kernel
-
+    initrd=$darch_initramfs
+    
     # Tell linux_entry to configure a new root, where our initramfs/vmlinux exists.
     GRUB_DEVICE_BOOT_OLD=$GRUB_DEVICE_BOOT
     GRUB_DEVICE_BOOT=$darch_source_block_device
