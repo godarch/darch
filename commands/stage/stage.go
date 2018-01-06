@@ -3,10 +3,13 @@ package stage
 import (
 	"fmt"
 	"log"
+	"os"
+	"os/exec"
 	"path"
 
 	"../../images"
 	"../../stage"
+	"../../utils"
 	"github.com/kennygrant/sanitize"
 	"github.com/ryanuber/columnize"
 	"github.com/urfave/cli"
@@ -48,6 +51,20 @@ func listCommand() cli.Command {
 	}
 }
 
+func syncBootLoaderCommand() cli.Command {
+	return cli.Command{
+		Name:  "sync-boot-loader",
+		Usage: "Update boot loader to reflect newly created/removed images.",
+		Action: func(c *cli.Context) error {
+			err := syncBootLoader()
+			if err != nil {
+				return cli.NewExitError(err, 1)
+			}
+			return nil
+		},
+	}
+}
+
 // Command Returns the command to be passed to a cli context.
 func Command() cli.Command {
 	return cli.Command{
@@ -56,6 +73,7 @@ func Command() cli.Command {
 		Subcommands: []cli.Command{
 			uploadCommand(),
 			listCommand(),
+			syncBootLoaderCommand(),
 		},
 	}
 }
@@ -106,4 +124,23 @@ func list() error {
 	fmt.Println(columnize.SimpleFormat(result))
 
 	return nil
+}
+
+func syncBootLoader() error {
+	// It may seem weird that we are just wrapping "grub-mkconfig".
+	// 1) I darch-related operations to be done through a single cli interface.
+	// 2) The process of updating bootloaders may change from OS versions.
+	//    Recommending people go through this method gives me a point at which
+	//    I can add if-logic for different os/image types.
+	if !utils.FileExists("/etc/grub.d/60_darch") {
+		return fmt.Errorf("Grub generator doesn't exist at %s", "/etc/grub.d/60_darch")
+	}
+
+	log.Println("Generating grub boot entries...")
+
+	cmd := exec.Command("grub-mkconfig", "--output", "/boot/grub/grub.cfg")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
 }
