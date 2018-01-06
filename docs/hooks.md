@@ -17,7 +17,7 @@ At a minimum, an image will contain the following files, which are required to b
     └── rootfs.squash
 ```
 
-
+Optionally, any number of hooks can be associated with the image.
 
 ```
 └── /var/darch/staged/image/tag
@@ -88,6 +88,48 @@ You can also configure ```fstab``` to **not** be run on specific images.
 }
 ```
 
-# Hook installation/configuring
+Inside of the ```/var/darch/hooks/fstab``` should be a ```hook``` script. This script will define what happens when the hook is applied to an image, and what happens when the hook is executed during boot.
 
-Each hook has a script that will be used for configuring an image.
+```bash
+#!/bin/bash
+
+help() {
+    # Used to output help documentation about the hook
+    echo "..."
+}
+
+install() {
+    # Called when the hook needs to be installed to an image/tag.
+    # Some environment variables are used to provide information to installers.
+    # DARCH_HOOKS_DIR=/var/darch/hooks
+    # DARCH_HOOK_NAME=fstab
+    # DARCH_HOOK_SRC_DIR=/var/darch/hooks/fstab
+    # DARCH_HOOK_DEST_DIR=/var/darch/staged/image/tag/hooks/fstab
+    echo "..."
+}
+
+run() {
+    # Called when the hook is run, during boot.
+    # Some environment variables are used to provide information to the running hook.
+    # DARCH_HOOK_DIR=/tmp/before/chroot/hooks/fstab/
+    # DARCH_ROOT_FS=/tmp/rootfs
+}
+```
+
+Here is what a hook would look like for ``fstab```.
+
+```bash
+#!/bin/bash
+
+help() {
+    echo "Places /var/darch/defaultfstab into /etc/fstab, before booting..."
+}
+
+install() {
+    cp "/var/darch/defaultfstab" "$DARCH_HOOK_DEST_DIR/fstab"
+}
+
+run() {
+    cp "$DARCH_HOOK_DIR/fstab" "$DARCH_ROOT_FS/etc/fstab"
+}
+```
