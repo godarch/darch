@@ -65,6 +65,20 @@ func syncBootLoaderCommand() cli.Command {
 	}
 }
 
+func runHooksCommand() cli.Command {
+	return cli.Command{
+		Name:  "run-hooks",
+		Usage: "Run all the hooks for every images.",
+		Action: func(c *cli.Context) error {
+			err := runHooks()
+			if err != nil {
+				return cli.NewExitError(err, 1)
+			}
+			return nil
+		},
+	}
+}
+
 // Command Returns the command to be passed to a cli context.
 func Command() cli.Command {
 	return cli.Command{
@@ -74,6 +88,7 @@ func Command() cli.Command {
 			uploadCommand(),
 			listCommand(),
 			syncBootLoaderCommand(),
+			runHooksCommand(),
 		},
 	}
 }
@@ -143,4 +158,8 @@ func syncBootLoader() error {
 	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
+}
+
+func runHooks() error {
+	return nil
 }

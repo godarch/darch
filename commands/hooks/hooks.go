@@ -84,16 +84,10 @@ func info(hookName string, includeMatchedImages bool) error {
 		return fmt.Errorf("You must provide a hook name")
 	}
 
-	allHooks, err := hooks.GetHooks()
+	hook, err := hooks.GetHook(hookName)
 
 	if err != nil {
 		return err
-	}
-
-	hook, ok := allHooks[hookName]
-
-	if !ok {
-		return fmt.Errorf("The hook name %s doesn't exist", hookName)
 	}
 
 	fmt.Printf("Name: %s\n", hook.Name)

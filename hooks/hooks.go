@@ -2,13 +2,14 @@ package hooks
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"path"
-
-	"github.com/gobwas/glob"
+	"sort"
 
 	"../stage"
 	"../utils"
+	"github.com/gobwas/glob"
 )
 
 // Hook A hook to be applied to images
@@ -98,9 +99,19 @@ func getHooksConfiguration() (map[string]hookConfiguration, error) {
 	return result, nil
 }
 
-// GetHooks Get all the available hooks
-func GetHooks() (map[string]Hook, error) {
-	result := make(map[string]Hook, 0)
+// GetHook Get a hook by a name
+func GetHook(name string) (Hook, error) {
+	result := Hook{}
+
+	if len(name) == 0 {
+		return result, fmt.Errorf("A name is required")
+	}
+
+	result.Path = path.Join("/var/darch/hooks/" + name)
+
+	if !utils.DirectoryExists(result.Path) {
+		return result, fmt.Errorf("The hook %s doesn't exist", name)
+	}
 
 	configuration, err := getHooksConfiguration()
 
@@ -108,7 +119,38 @@ func GetHooks() (map[string]Hook, error) {
 		return result, err
 	}
 
+	var config hookConfiguration
+	if val, ok := configuration[name]; ok {
+		config = val
+	} else {
+		config = configuration["_default"]
+	}
+
+	result.ExecutionOrder = config.ExecutionOrder
+	result.IncludeImages = config.IncludeImages
+	result.ExcludeImages = config.ExcludeImages
+
+	return result, nil
+}
+
+// GetHooks Get all the available hooks
+func GetHooks() ([]Hook, error) {
+	result := make(map[string]Hook, 0)
+
+	configuration, err := getHooksConfiguration()
+
+	if err != nil {
+		return nil, err
+	}
+
 	hooks, err := utils.GetChildDirectories("/var/darch/hooks")
+
+	if err != nil {
+		return nil, err
+	}
+
+	// This is used for sorting later
+	executionOrderGroup := make(map[int][]string)
 
 	for _, hook := range hooks {
 		newHook := Hook{
@@ -125,9 +167,32 @@ func GetHooks() (map[string]Hook, error) {
 		newHook.IncludeImages = config.IncludeImages
 		newHook.ExcludeImages = config.ExcludeImages
 		result[newHook.Name] = newHook
+
+		if value, ok := executionOrderGroup[newHook.ExecutionOrder]; ok {
+			executionOrderGroup[newHook.ExecutionOrder] = append(value, newHook.Name)
+		} else {
+			executionOrderGroup[newHook.ExecutionOrder] = []string{
+				newHook.Name,
+			}
+		}
 	}
 
-	return result, nil
+	// Store the items in [ExecutionOrder->Name] order
+	var executionOrderGroupKeys []int
+	resultSorted := make([]Hook, 0)
+	for k := range executionOrderGroup {
+		executionOrderGroupKeys = append(executionOrderGroupKeys, k)
+	}
+	sort.Ints(executionOrderGroupKeys)
+	for _, executionOrder := range executionOrderGroupKeys {
+		executionOrderHooks := executionOrderGroup[executionOrder]
+		sort.Strings(executionOrderHooks)
+		for _, hook := range executionOrderHooks {
+			resultSorted = append(resultSorted, result[hook])
+		}
+	}
+
+	return resultSorted, nil
 }
 
 // AppliesToStagedTag Determines if a hook applies to the given staged tag
