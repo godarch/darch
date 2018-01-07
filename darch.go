@@ -7,6 +7,7 @@ import (
 
 	"./commands/build"
 	"./commands/builddep"
+	"./commands/hooks"
 	"./commands/inspect"
 	"./commands/stage"
 	"github.com/urfave/cli"
@@ -34,6 +35,7 @@ func main() {
 		inspect.Command(),
 		stage.Command(),
 		builddep.Command(),
+		hooks.Command(),
 		cli.Command{
 			Name:  "version",
 			Usage: "Print version information about darch.",
