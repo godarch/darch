@@ -5,6 +5,9 @@ import (
 	"io/ioutil"
 	"path"
 
+	"github.com/gobwas/glob"
+
+	"../stage"
 	"../utils"
 )
 
@@ -125,4 +128,25 @@ func GetHooks() (map[string]Hook, error) {
 	}
 
 	return result, nil
+}
+
+// AppliesToStagedTag Determines if a hook applies to the given staged tag
+func AppliesToStagedTag(hook Hook, tag stage.StagedItemTag) bool {
+	// First, let's see if we globbed the image
+	for _, includeImage := range hook.IncludeImages {
+		g := glob.MustCompile(includeImage)
+		if g.Match(tag.FullName) {
+			// This image has been included, but now, let's see if we excluded it
+			for _, excludeImage := range hook.ExcludeImages {
+				g = glob.MustCompile(excludeImage)
+				if g.Match(tag.FullName) {
+					// Someone doesn't want to apply this hook to this tag!
+					return false
+				}
+			}
+			// Nobody excluded us (after inclusion), so we are clear!
+			return true
+		}
+	}
+	return false
 }

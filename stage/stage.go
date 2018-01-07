@@ -14,6 +14,8 @@ import (
 // StagedItemTag A struct representing a tag that is stored.
 type StagedItemTag struct {
 	Name          string
+	ImageName     string
+	FullName      string
 	StagedOn      time.Time
 	Path          string
 	BootKernel    string
@@ -75,6 +77,8 @@ func GetAllStaged(stagedDirectory string) (map[string]StagedItem, error) {
 
 			stagedItemTag := StagedItemTag{}
 			stagedItemTag.Name = tagName
+			stagedItemTag.ImageName = imageName
+			stagedItemTag.FullName = imageName + ":" + tagName
 			stagedItemTag.Path = directory
 			stagedItemTag.BootKernel = stagedItemTagConfiguration.Kernel
 			stagedItemTag.BootInitRAMFS = stagedItemTagConfiguration.InitRAMFS
