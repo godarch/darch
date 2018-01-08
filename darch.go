@@ -7,6 +7,7 @@ import (
 
 	"./commands/build"
 	"./commands/builddep"
+	"./commands/helpers"
 	"./commands/hooks"
 	"./commands/inspect"
 	"./commands/stage"
@@ -36,6 +37,7 @@ func main() {
 		stage.Command(),
 		builddep.Command(),
 		hooks.Command(),
+		helpers.Command(),
 		cli.Command{
 			Name:  "version",
 			Usage: "Print version information about darch.",
