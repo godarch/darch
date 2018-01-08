@@ -39,9 +39,11 @@ build: deps
 	$(GO) build -ldflags "-X main.GitCommit=${GIT_COMMIT}${GIT_DIRTY} -X main.Version=${SEMVAR_VERSION}" -o bin/${BIN}
 package: build
 	mkdir -p bin/etc/grub.d/
-	mkdir -p bin/usr/bin/
 	cp grub-mkconfig-script bin/etc/grub.d/60_darch
+	mkdir -p bin/usr/bin/
 	cp bin/darch bin/usr/bin/darch
+	mkdir -p bin/var/darch/hooks/fstab
+	cp scripts/hooks/fstab bin/var/darch/hooks/fstab/hook
 	tar cvzpf bin/darch-${GOARCH}.tar.gz -C bin usr/bin/darch etc/grub.d/60_darch
 clean:
 	$(GO) clean -i $(PKG)
