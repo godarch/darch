@@ -272,25 +272,13 @@ func ExtractImage(name string, tag string, destination string) error {
 		return err
 	}
 
-	err = runCommand("docker", "exec", tmpImageName, "mksquashfs", "root.x86_64", "/rootfs.squash")
+	err = runCommand("docker", "exec", tmpImageName, "/darch-extract")
 	if err != nil {
 		destroyContainer(tmpImageName)
 		return err
 	}
 
-	err = runCommand("docker", "cp", tmpImageName+":/rootfs.squash", path.Join(destination, "rootfs.squash"))
-	if err != nil {
-		destroyContainer(tmpImageName)
-		return err
-	}
-
-	err = runCommand("docker", "cp", tmpImageName+":/root.x86_64/boot/vmlinuz-linux", path.Join(destination, "vmlinuz-linux"))
-	if err != nil {
-		destroyContainer(tmpImageName)
-		return err
-	}
-
-	err = runCommand("docker", "cp", tmpImageName+":/root.x86_64/boot/initramfs-linux.img", path.Join(destination, "initramfs-linux.img"))
+	err = runCommand("docker", "cp", tmpImageName+":/extract/.", destination)
 	if err != nil {
 		destroyContainer(tmpImageName)
 		return err

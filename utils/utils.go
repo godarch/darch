@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -71,8 +72,8 @@ func DirectoryExists(directory string) bool {
 }
 
 // FileExists Returns true if the given path is a file, and it exists.
-func FileExists(directory string) bool {
-	if stat, err := os.Stat(directory); err == nil && !stat.IsDir() {
+func FileExists(file string) bool {
+	if stat, err := os.Stat(file); err == nil && !stat.IsDir() {
 		return true
 	}
 	return false
@@ -241,4 +242,25 @@ func GetChildDirectories(path string) ([]string, error) {
 	}
 	sort.Strings(directories)
 	return directories, nil
+}
+
+// GetFileLines Get all the lines from a file
+func GetFileLines(path string) ([]string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	result := []string{}
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		result = append(result, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		return result, err
+	}
+
+	return result, nil
 }

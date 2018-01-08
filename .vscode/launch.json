@@ -14,8 +14,8 @@
             },
             "cwd": "/home/pknopf/git/darch-images",
             "args": [
-                "inspect",
-                "plasma"
+                "stage",
+                "list"
             ],
             "program": "${workspaceRoot}/darch.go"
         }

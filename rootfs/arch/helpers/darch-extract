@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+# Make the directory that will be extracted
+mkdir /extract
+
+# Build/copy all files to extract directory
+mksquashfs /root.x86_64 /extract/rootfs.squash
+cp /root.x86_64/boot/vmlinuz-linux /extract/vmlinuz-linux
+cp /root.x86_64/boot/initramfs-linux.img /extract/initramfs-linux.img
+
+# Stamp a json file which tells people what files are for what.
+json='{"kernel": "vmlinuz-linux", "initramfs": "initramfs-linux.img", "rootfs": "rootfs.squash"}'
+echo $json > /extract/image.json

@@ -5,10 +5,11 @@ RUN pacman -Syu --noconfirm
 RUN pacman -S --noconfirm arch-install-scripts squashfs-tools
 
 # Add our rootfs
-ADD rootfs.tar.gz /
+RUN curl https://mirrors.kernel.org/archlinux/iso/latest/archlinux-bootstrap-2018.01.01-x86_64.tar.gz | tar xpz
 
 # Add custom arch-chroot that handles custom mounts
 ADD arch-chroot-custom /usr/sbin/
+ADD arch-chroot /usr/sbin
 
 # Add our cpio hooks to be used when building the image
 ADD initcpio-hooks/ /initcpio-hooks
@@ -22,5 +23,6 @@ ADD helpers/darch-longrunning /
 ADD helpers/darch-prepare /
 ADD helpers/darch-runimage /
 ADD helpers/darch-teardown /
+ADD helpers/darch-extract /
 
 CMD [ "/darch-longrunning" ]

@@ -7,15 +7,20 @@ import (
 	"os/exec"
 	"path"
 
+	"../../hooks"
+	"../../images"
+	"../../stage"
 	"../../utils"
+	"github.com/gobwas/glob"
+	"github.com/kennygrant/sanitize"
+	"github.com/ryanuber/columnize"
 	"github.com/urfave/cli"
 )
 
-// Command Returns the command to be passed to a cli context.
-func Command() cli.Command {
+func uploadCommand() cli.Command {
 	return cli.Command{
-		Name:      "stage",
-		Usage:     "Stage an image for booting.",
+		Name:      "upload",
+		Usage:     "Upload an image to the stage to be booted.",
 		ArgsUsage: "IMAGE_NAME",
 		Flags: []cli.Flag{
 			cli.StringFlag{
@@ -23,22 +28,9 @@ func Command() cli.Command {
 				Usage: "The tag to stage.",
 				Value: "local",
 			},
-			cli.StringFlag{
-				Name:  "source, s",
-				Usage: "The location where the extract images are.",
-				Value: "/var/darch/extracted",
-			},
-			cli.StringFlag{
-				Name:  "fstab",
-				Usage: "The fstab file to use for the booted image. If relative path, darch will look in \"source\" for the file.",
-				Value: "defaultfstab",
-			},
 		},
 		Action: func(c *cli.Context) error {
-			if len(c.Args()) != 1 {
-				return cli.NewExitError(fmt.Errorf("Unexpected arguements"), 1)
-			}
-			err := stage(c.Args().First(), c.String("tag"), c.String("source"), c.String("fstab"))
+			err := upload(c.Args().First(), c.String("tag"))
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
@@ -47,7 +39,70 @@ func Command() cli.Command {
 	}
 }
 
-func stage(name string, tag string, sourceDirectory string, fstab string) error {
+func listCommand() cli.Command {
+	return cli.Command{
+		Name:  "list",
+		Usage: "List the images currently staged.",
+		Action: func(c *cli.Context) error {
+			err := list()
+			if err != nil {
+				return cli.NewExitError(err, 1)
+			}
+			return nil
+		},
+	}
+}
+
+func syncBootLoaderCommand() cli.Command {
+	return cli.Command{
+		Name:  "sync-boot-loader",
+		Usage: "Update boot loader to reflect newly created/removed images.",
+		Action: func(c *cli.Context) error {
+			err := syncBootLoader()
+			if err != nil {
+				return cli.NewExitError(err, 1)
+			}
+			return nil
+		},
+	}
+}
+
+func runHooksCommand() cli.Command {
+	return cli.Command{
+		Name:  "run-hooks",
+		Usage: "Run all the hooks for every images.",
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:  "only-images, i",
+				Usage: "A globbing pattern matching \"image:tag\" to update hooks for.",
+				Value: "",
+			},
+		},
+		Action: func(c *cli.Context) error {
+			err := runHooks(c.String("only-images"))
+			if err != nil {
+				return cli.NewExitError(err, 1)
+			}
+			return nil
+		},
+	}
+}
+
+// Command Returns the command to be passed to a cli context.
+func Command() cli.Command {
+	return cli.Command{
+		Name:  "stage",
+		Usage: "Commands that help manage the stage.",
+		Subcommands: []cli.Command{
+			uploadCommand(),
+			listCommand(),
+			syncBootLoaderCommand(),
+			runHooksCommand(),
+		},
+	}
+}
+
+func upload(name string, tag string) error {
 
 	if len(name) == 0 {
 		return fmt.Errorf("Name is required")
@@ -57,60 +112,50 @@ func stage(name string, tag string, sourceDirectory string, fstab string) error 
 		return fmt.Errorf("Tag is required")
 	}
 
-	if len(sourceDirectory) == 0 {
-		return fmt.Errorf("Source is required")
-	}
-
-	if len(fstab) == 0 {
-		return fmt.Errorf("fstab is required")
-	}
-
-	sourceDirectory = utils.ExpandPath(sourceDirectory)
+	destinationDirectory := "/var/darch/staged"
+	destinationDirectory = path.Join(destinationDirectory, sanitize.Path(name+"/"+tag))
 
 	log.Println("Name: " + name)
 	log.Println("Tag: " + tag)
-	log.Println("Source: " + sourceDirectory)
+	log.Println("Destination: " + destinationDirectory)
 
-	sourceImageDirectory := path.Join(sourceDirectory, name+"/"+tag)
+	err := images.ExtractImage(name, tag, destinationDirectory)
 
-	if !utils.DirectoryExists(sourceImageDirectory) {
-		return fmt.Errorf("No image found at %s", sourceImageDirectory)
-	}
-
-	destinationDirectory := path.Join("/boot", "darch", name, tag)
-
-	if utils.DirectoryExists(destinationDirectory) {
-		log.Println("Cleaning already existing staging directory...")
-		err := os.RemoveAll(destinationDirectory)
-		if err != nil {
-			log.Printf("Couldn't delete already staged directory %s\n", destinationDirectory)
-			return err
-		}
-	}
-
-	log.Printf("Copying boot files to %s...\n", destinationDirectory)
-
-	err := utils.CopyDir(sourceImageDirectory, destinationDirectory)
 	if err != nil {
 		return err
 	}
 
-	if len(fstab) > 0 {
-		if !path.IsAbs(fstab) {
-			fstab = utils.ExpandPath(path.Join(sourceDirectory, fstab))
-		}
+	return runHooks(name + ":" + tag)
+}
 
-		log.Printf("Staging fstab file %s\n", fstab)
+func list() error {
+	stagedItems, err := stage.GetAllStaged("/var/darch/staged")
 
-		err = utils.CopyFile(fstab, path.Join(destinationDirectory, "fstab"))
+	if err != nil {
+		return err
+	}
 
-		if err != nil {
-			return err
+	result := []string{
+		"Name | Tag | Path | Kernel | InitramFS | RootFS",
+	}
+
+	for _, stagedItem := range stagedItems {
+		for _, stagedItemTag := range stagedItem.Tags {
+			result = append(result, stagedItem.Name+" | "+stagedItemTag.Name+" | "+stagedItemTag.Path+" | "+stagedItemTag.BootKernel+" | "+stagedItemTag.BootInitRAMFS+" | "+stagedItemTag.BootRootFS)
 		}
 	}
 
-	log.Printf("Successfully staged %s at tag %s\n", name, tag)
+	fmt.Println(columnize.SimpleFormat(result))
 
+	return nil
+}
+
+func syncBootLoader() error {
+	// It may seem weird that we are just wrapping "grub-mkconfig".
+	// 1) I darch-related operations to be done through a single cli interface.
+	// 2) The process of updating bootloaders may change from OS versions.
+	//    Recommending people go through this method gives me a point at which
+	//    I can add if-logic for different os/image types.
 	if !utils.FileExists("/etc/grub.d/60_darch") {
 		return fmt.Errorf("Grub generator doesn't exist at %s", "/etc/grub.d/60_darch")
 	}
@@ -120,13 +165,50 @@ func stage(name string, tag string, sourceDirectory string, fstab string) error 
 	cmd := exec.Command("grub-mkconfig", "--output", "/boot/grub/grub.cfg")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err = cmd.Run()
 
-	if err == nil {
+	return cmd.Run()
+}
+
+func runHooks(onlyImages string) error {
+	stagedItems, err := stage.GetAllStaged("/var/darch/staged")
+
+	if err != nil {
 		return err
 	}
 
-	log.Println("Finished!")
+	allHooks, err := hooks.GetHooks()
+
+	if err != nil {
+		return err
+	}
+
+	for _, stagedItem := range stagedItems {
+		for _, stagedItemTag := range stagedItem.Tags {
+			allowed := true
+			if len(onlyImages) > 0 {
+				// Let's make sure the glob matches this image
+				g := glob.MustCompile(onlyImages)
+				if !g.Match(stagedItemTag.FullName) {
+					allowed = false
+				}
+			}
+			if allowed {
+				// First, let's delet all hold holds
+				err = os.RemoveAll(path.Join(stagedItemTag.Path, "hooks"))
+				if err != nil {
+					return err
+				}
+				for _, hook := range allHooks {
+					if allowed && hooks.AppliesToStagedTag(hook, stagedItemTag) {
+						err = hooks.ApplyHookToStagedTag(hook, stagedItemTag)
+						if err != nil {
+							return err
+						}
+					}
+				}
+			}
+		}
+	}
 
 	return nil
 }
