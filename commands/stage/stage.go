@@ -184,19 +184,26 @@ func runHooks(onlyImages string) error {
 
 	for _, stagedItem := range stagedItems {
 		for _, stagedItemTag := range stagedItem.Tags {
-			for _, hook := range allHooks {
-				allowed := true
-				if len(onlyImages) > 0 {
-					// Let's make sure the glob matches this image
-					g := glob.MustCompile(onlyImages)
-					if !g.Match(stagedItemTag.FullName) {
-						allowed = false
-					}
+			allowed := true
+			if len(onlyImages) > 0 {
+				// Let's make sure the glob matches this image
+				g := glob.MustCompile(onlyImages)
+				if !g.Match(stagedItemTag.FullName) {
+					allowed = false
 				}
-				if allowed && hooks.AppliesToStagedTag(hook, stagedItemTag) {
-					err = hooks.ApplyHookToStagedTag(hook, stagedItemTag)
-					if err != nil {
-						return err
+			}
+			if allowed {
+				// First, let's delet all hold holds
+				err = os.RemoveAll(path.Join(stagedItemTag.Path, "hooks"))
+				if err != nil {
+					return err
+				}
+				for _, hook := range allHooks {
+					if allowed && hooks.AppliesToStagedTag(hook, stagedItemTag) {
+						err = hooks.ApplyHookToStagedTag(hook, stagedItemTag)
+						if err != nil {
+							return err
+						}
 					}
 				}
 			}
