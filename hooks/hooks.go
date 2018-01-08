@@ -282,6 +282,7 @@ func ApplyHookToStagedTag(hook Hook, tag stage.StagedItemTag) error {
 		fmt.Sprintf("DARCH_HOOK_NAME=%s", hook.Name),
 		fmt.Sprintf("DARCH_HOOK_DIR=%s", hook.Path),
 		fmt.Sprintf("DARCH_HOOK_DEST_DIR=%s", destinationHookDirectory),
+		fmt.Sprintf("DARCH_IMAGE_NAME=%s", tag.FullName),
 	}...)
 	cmd.Dir = destinationHookDirectory
 	cmd.Stdout = os.Stdout
