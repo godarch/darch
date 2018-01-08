@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"os/exec"
 	"path"
 	"sort"
 
@@ -16,7 +18,9 @@ import (
 type Hook struct {
 	Name           string
 	Path           string
+	HooksPath      string
 	ExecutionOrder int
+	NameWithOrder  string //ExecutionOrder_Name
 	IncludeImages  []string
 	ExcludeImages  []string
 }
@@ -107,7 +111,9 @@ func GetHook(name string) (Hook, error) {
 		return result, fmt.Errorf("A name is required")
 	}
 
-	result.Path = path.Join("/var/darch/hooks/" + name)
+	result.Name = name
+	result.HooksPath = "/var/darch/hooks"
+	result.Path = path.Join(result.HooksPath, name)
 
 	if !utils.DirectoryExists(result.Path) {
 		return result, fmt.Errorf("The hook %s doesn't exist", name)
@@ -129,6 +135,7 @@ func GetHook(name string) (Hook, error) {
 	result.ExecutionOrder = config.ExecutionOrder
 	result.IncludeImages = config.IncludeImages
 	result.ExcludeImages = config.ExcludeImages
+	result.NameWithOrder = fmt.Sprintf("%08d_%s", result.ExecutionOrder, result.Name)
 
 	return result, nil
 }
@@ -154,9 +161,10 @@ func GetHooks() ([]Hook, error) {
 
 	for _, hook := range hooks {
 		newHook := Hook{
-			Name: hook,
-			Path: path.Join("/var/darch/hooks", hook),
+			Name:      hook,
+			HooksPath: "/var/darch/hooks",
 		}
+		newHook.Path = path.Join(newHook.HooksPath, newHook.Name)
 		var config hookConfiguration
 		if val, ok := configuration[newHook.Name]; ok {
 			config = val
@@ -166,6 +174,7 @@ func GetHooks() ([]Hook, error) {
 		newHook.ExecutionOrder = config.ExecutionOrder
 		newHook.IncludeImages = config.IncludeImages
 		newHook.ExcludeImages = config.ExcludeImages
+		newHook.NameWithOrder = fmt.Sprintf("%08d_%s", newHook.ExecutionOrder, newHook.Name)
 		result[newHook.Name] = newHook
 
 		if value, ok := executionOrderGroup[newHook.ExecutionOrder]; ok {
@@ -214,4 +223,86 @@ func AppliesToStagedTag(hook Hook, tag stage.StagedItemTag) bool {
 		}
 	}
 	return false
+}
+
+func removeHookFromStagedTag(hook Hook, tag stage.StagedItemTag) error {
+	hooksDirectory := path.Join(tag.Path, "hooks")
+
+	if !utils.DirectoryExists(hooksDirectory) {
+		return nil
+	}
+
+	childrenDirectories, err := utils.GetChildDirectories(hooksDirectory)
+	if err != nil {
+		return err
+	}
+
+	// remove *_hookname
+	g := glob.MustCompile(fmt.Sprintf("*_%s", hook.Name))
+	for _, child := range childrenDirectories {
+		if g.Match(child) {
+			err = os.RemoveAll(path.Join(hooksDirectory, child))
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// ApplyHookToStagedTag Apply a hook to a staged tag
+func ApplyHookToStagedTag(hook Hook, tag stage.StagedItemTag) error {
+	fmt.Printf("Running hook %s for image %s\n", hook.Name, tag.FullName)
+	var destinationHookDirectory = path.Join(tag.Path, "hooks", hook.NameWithOrder)
+
+	// clean/make the directory that our hook data will live
+	err := removeHookFromStagedTag(hook, tag)
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(destinationHookDirectory, 0700)
+	if err != nil {
+		return err
+	}
+
+	hookFile := path.Join(hook.Path, "hook")
+	if !utils.FileExists(hookFile) {
+		return fmt.Errorf("Hook script %s doesn't exist", hookFile)
+	}
+
+	err = utils.CopyFile(hookFile, path.Join(destinationHookDirectory, "hook"))
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command("/bin/bash", "-c", ". "+path.Join(destinationHookDirectory, "hook")+" && install")
+	cmd.Env = append(os.Environ(), []string{
+		fmt.Sprintf("DARCH_HOOKS_DIR=%s", hook.HooksPath),
+		fmt.Sprintf("DARCH_HOOK_NAME=%s", hook.Name),
+		fmt.Sprintf("DARCH_HOOK_DIR=%s", hook.Path),
+		fmt.Sprintf("DARCH_HOOK_DEST_DIR=%s", destinationHookDirectory),
+	}...)
+	cmd.Dir = destinationHookDirectory
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	err = cmd.Run()
+
+	return err
+}
+
+// PrintHookHelp Print the help for a hook
+func PrintHookHelp(hook Hook) error {
+	hookFile := path.Join(hook.Path, "hook")
+	if !utils.FileExists(hookFile) {
+		return fmt.Errorf("Hook script %s doesn't exist", hookFile)
+	}
+
+	cmd := exec.Command("/bin/bash", "-c", ". "+hookFile+" && help")
+	cmd.Dir = hook.HooksPath
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	return cmd.Run()
 }

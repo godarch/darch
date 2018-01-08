@@ -23,9 +23,9 @@ func listCommand() cli.Command {
 	}
 }
 
-func infoCommand() cli.Command {
+func detailsCommand() cli.Command {
 	return cli.Command{
-		Name:      "info",
+		Name:      "details",
 		Usage:     "Get info about a hook, including what images the hook applies to (based on configuration).",
 		ArgsUsage: "HOOK_NAME",
 		Flags: []cli.Flag{
@@ -37,7 +37,25 @@ func infoCommand() cli.Command {
 			if len(c.Args()) != 1 {
 				return cli.NewExitError(fmt.Errorf("Unexpected arguements"), 1)
 			}
-			err := info(c.Args().First(), c.Bool("include-matched-images"))
+			err := details(c.Args().First(), c.Bool("include-matched-images"))
+			if err != nil {
+				return cli.NewExitError(err, 1)
+			}
+			return nil
+		},
+	}
+}
+
+func helpCommand() cli.Command {
+	return cli.Command{
+		Name:      "help",
+		Usage:     "Print help for the given hook.",
+		ArgsUsage: "HOOK_NAME",
+		Action: func(c *cli.Context) error {
+			if len(c.Args()) != 1 {
+				return cli.NewExitError(fmt.Errorf("Unexpected arguements"), 1)
+			}
+			err := help(c.Args().First())
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
@@ -53,7 +71,8 @@ func Command() cli.Command {
 		Usage: "Commands manage/view hooks.",
 		Subcommands: []cli.Command{
 			listCommand(),
-			infoCommand(),
+			detailsCommand(),
+			helpCommand(),
 		},
 	}
 }
@@ -79,13 +98,8 @@ func list() error {
 	return nil
 }
 
-func info(hookName string, includeMatchedImages bool) error {
-	if len(hookName) == 0 {
-		return fmt.Errorf("You must provide a hook name")
-	}
-
+func details(hookName string, includeMatchedImages bool) error {
 	hook, err := hooks.GetHook(hookName)
-
 	if err != nil {
 		return err
 	}
@@ -118,4 +132,13 @@ func info(hookName string, includeMatchedImages bool) error {
 	}
 
 	return nil
+}
+
+func help(hookName string) error {
+	hook, err := hooks.GetHook(hookName)
+	if err != nil {
+		return err
+	}
+
+	return hooks.PrintHookHelp(hook)
 }

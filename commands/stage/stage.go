@@ -7,9 +7,11 @@ import (
 	"os/exec"
 	"path"
 
+	"../../hooks"
 	"../../images"
 	"../../stage"
 	"../../utils"
+	"github.com/gobwas/glob"
 	"github.com/kennygrant/sanitize"
 	"github.com/ryanuber/columnize"
 	"github.com/urfave/cli"
@@ -69,8 +71,15 @@ func runHooksCommand() cli.Command {
 	return cli.Command{
 		Name:  "run-hooks",
 		Usage: "Run all the hooks for every images.",
+		Flags: []cli.Flag{
+			cli.StringFlag{
+				Name:  "only-images, i",
+				Usage: "A globbing pattern matching \"image:tag\" to update hooks for.",
+				Value: "",
+			},
+		},
 		Action: func(c *cli.Context) error {
-			err := runHooks()
+			err := runHooks(c.String("only-images"))
 			if err != nil {
 				return cli.NewExitError(err, 1)
 			}
@@ -116,7 +125,7 @@ func upload(name string, tag string) error {
 		return err
 	}
 
-	return nil
+	return runHooks(name + ":" + tag)
 }
 
 func list() error {
@@ -160,6 +169,39 @@ func syncBootLoader() error {
 	return cmd.Run()
 }
 
-func runHooks() error {
+func runHooks(onlyImages string) error {
+	stagedItems, err := stage.GetAllStaged("/var/darch/staged")
+
+	if err != nil {
+		return err
+	}
+
+	allHooks, err := hooks.GetHooks()
+
+	if err != nil {
+		return err
+	}
+
+	for _, stagedItem := range stagedItems {
+		for _, stagedItemTag := range stagedItem.Tags {
+			for _, hook := range allHooks {
+				allowed := true
+				if len(onlyImages) > 0 {
+					// Let's make sure the glob matches this image
+					g := glob.MustCompile(onlyImages)
+					if !g.Match(stagedItemTag.FullName) {
+						allowed = false
+					}
+				}
+				if allowed && hooks.AppliesToStagedTag(hook, stagedItemTag) {
+					err = hooks.ApplyHookToStagedTag(hook, stagedItemTag)
+					if err != nil {
+						return err
+					}
+				}
+			}
+		}
+	}
+
 	return nil
 }
