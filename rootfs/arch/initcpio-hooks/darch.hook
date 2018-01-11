@@ -60,12 +60,19 @@ mount_handler_darch() {
         launch_interactive_shell
     fi
 
-    #if [ -f "${path}/${path_fstab}" ]; then
-    #    msg "Found ${path}/${path_fstab}, copying to new root"
-    #    cp "${path}/${path_fstab}" "${destination_root}/etc/fstab"
-    #else
-    #    warning "No fstab found in ${path}"
-    #fi
+    msg "TEST"
+    launch_interactive_shell
+
+    for hook_dir in $path/hooks/*; do
+        hook_name=`basename $hook_dir`
+        export DARCH_ROOT_FS=$destination_root
+        export DARCH_HOOK_DIR=$path/hooks/$hook_name
+        msg "hook"
+        launch_interactive_shell
+        unset "run"
+        . $DARCH_HOOK_DIR/hook
+        "run"
+    done
 }
 
 run_hook() {
