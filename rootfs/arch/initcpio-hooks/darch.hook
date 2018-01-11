@@ -1,13 +1,12 @@
 mount_handler_darch() {
     msg Darch mount handler
 
-    local destination_root device path path_squash path_fstab imagedev_mountpoint rootfs_ro_mountpoint rootfs_rw_mountpoint
+    local destination_root device path imagedev_mountpoint rootfs_ro_mountpoint rootfs_rw_mountpoint
 
     destination_root="${1}"
-    device="${darchdir%%:*}"
-    path="${darchdir##*:}"
-    path_squash="rootfs.squash"
-    path_fstab="fstab"
+    device="${darch_dir%%:*}"
+    path="${darch_dir##*:}"
+        
     imagedev_mountpoint="/image_source"
     rootfs_ro_mountpoint="/squashfs.ro"
     rootfs_rw_mountpoint="/squashfs.rw"
@@ -38,14 +37,14 @@ mount_handler_darch() {
     
     path="${imagedev_mountpoint}/${path}"
 
-    if [[ ! -r "${path}/${path_squash}" ]]; then
-        err "SquashFS image (${path}/${path_squash}) is not found (or it is not readable)"
-        echo "Try to move or link image to ${path}/${path_squash}"
+    if [[ ! -r "${path}/${darch_rootfs}" ]]; then
+        err "SquashFS image (${path}/${darch_rootfs}) is not found (or it is not readable)"
+        echo "Try to move or link image to ${path}/${path_rootfs}"
         launch_interactive_shell
         msg "Trying to continue (this will most likely fail)..."
     fi
 
-    mount -t squashfs "${path}/${path_squash}" "${rootfs_ro_mountpoint}"
+    mount -t squashfs "${path}/${darch_rootfs}" "${rootfs_ro_mountpoint}"
 
     if [[ ! $? -eq 0 ]]; then
         err "Unable to mount SquashFS image..."
@@ -61,16 +60,16 @@ mount_handler_darch() {
         launch_interactive_shell
     fi
 
-    if [ -f "${path}/${path_fstab}" ]; then
-        msg "Found ${path}/${path_fstab}, copying to new root"
-        cp "${path}/${path_fstab}" "${destination_root}/etc/fstab"
-    else
-        warning "No fstab found in ${path}"
-    fi
+    #if [ -f "${path}/${path_fstab}" ]; then
+    #    msg "Found ${path}/${path_fstab}, copying to new root"
+    #    cp "${path}/${path_fstab}" "${destination_root}/etc/fstab"
+    #else
+    #    warning "No fstab found in ${path}"
+    #fi
 }
 
 run_hook() {
-    if [[ -z ${darchdir} ]]; then
+    if [[ -z ${darch_dir} ]]; then
         return 0;
     fi
     mount_handler=mount_handler_darch
