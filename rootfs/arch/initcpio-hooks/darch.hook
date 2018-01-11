@@ -63,10 +63,10 @@ mount_handler_darch() {
     msg "TEST"
     launch_interactive_shell
 
-    for hook_dir in $path/hooks/*; do
-        hook_name=`basename $hook_dir`
-        export DARCH_ROOT_FS=$destination_root
-        export DARCH_HOOK_DIR=$path/hooks/$hook_name
+    for hook_dir in ${path}/hooks/*; do
+        hook_name=`basename ${hook_dir}`
+        export DARCH_ROOT_FS="${destination_root}"
+        export DARCH_HOOK_DIR="${path}/hooks/${hook_name}"
         msg "hook"
         launch_interactive_shell
         unset "run"
