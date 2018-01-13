@@ -46,7 +46,7 @@ package: build
 	cp scripts/hooks/fstab bin/var/darch/hooks/fstab/hook
 	mkdir -p bin/var/darch/hooks/hostname
 	cp scripts/hooks/fstab bin/var/darch/hooks/hostname/hook
-	chmod 777 bin/var/darch
+	chmod -R 777 bin/var/darch
 	tar cvzpf bin/darch-${GOARCH}.tar.gz -C bin usr/bin/darch etc/grub.d/60_darch var/darch
 clean:
 	$(GO) clean -i $(PKG)
