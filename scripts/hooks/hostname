@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+set -e
+
+help() {
+    echo "Help..."
+}
+
+install() {
+    local glob_config_file="$DARCH_HOOKS_DIR/hostname.config"
+    if [ ! -e "$glob_config_file" ]; then
+        echo "Glob config doesn't exist, not using same hostname of running machine..."
+        cp /etc/hostname hostname
+        exit 0
+    fi
+
+    local glob_match=`darch helpers glob-config-first-match $glob_config_file $DARCH_IMAGE_NAME`
+    if [ $? != 0 ]; then
+        echo "Couldn't match with fstab.config..."
+        echo "$glob_match"
+        exit 1
+    fi
+
+    echo "$glob_match" > hostname
+}
+
+run() {
+    rm -f "$DARCH_ROOT_FS/etc/hostname"
+    cp "$DARCH_HOOK_DIR/hostname" "$DARCH_ROOT_FS/etc/hostname"
+}

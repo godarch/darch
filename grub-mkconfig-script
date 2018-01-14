@@ -23,7 +23,7 @@ while read -r entry; do
     if [[ "$darch_source_absolute" != "/*" ]]; then
         darch_source_absolute="/$darch_source_absolute"
     fi
-    darch_cmdline="darchdir=UUID=$darch_source_uuid:$darch_source_absolute"
+    darch_cmdline="darch_rootfs=$darch_rootfs darch_dir=UUID=$darch_source_uuid:$darch_source_absolute"
 
     # Need for the "linux_entry" command to properly echo a menu entry.
     version=`echo $darch_kernel | sed -e "s,vmlinuz-,,g"`
