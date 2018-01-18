@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/pauldotknopf/darch/cmd/darch/commands/images"
+	"github.com/pauldotknopf/darch/cmd/darch/commands/recipes"
 	"github.com/urfave/cli"
 )
 
@@ -16,6 +17,7 @@ func main() {
 	app.HideVersion = true
 	app.Commands = []cli.Command{
 		images.Command,
+		recipes.Command,
 		cli.Command{
 			Name:  "version",
 			Usage: "Print version information about darch.",
