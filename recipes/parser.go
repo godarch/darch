@@ -51,28 +51,28 @@ func parseRecipe(recipesDir string, recipeName string) (Recipe, error) {
 }
 
 func loadRecipeConfiguration(recipe Recipe) (recipeConfiguration, error) {
-	imageConfigurationPath := path.Join(image.ImageDir, "config.json")
-	imageConfiguration := imageConfiguration{}
+	recipeConfigurationPath := path.Join(recipe.RecipeDir, "config.json")
+	recipeConfiguration := recipeConfiguration{}
 
-	if !utils.FileExists(imageConfigurationPath) {
-		return nil, fmt.Errorf("No configuration file exists at %s", imageConfigurationPath)
+	if !utils.FileExists(recipeConfigurationPath) {
+		return recipeConfiguration, fmt.Errorf("No configuration file exists at %s", recipeConfigurationPath)
 	}
 
-	jsonData, err := ioutil.ReadFile(imageConfigurationPath)
+	jsonData, err := ioutil.ReadFile(recipeConfigurationPath)
 
 	if err != nil {
-		return nil, err
+		return recipeConfiguration, err
 	}
 
-	err = json.Unmarshal(jsonData, &imageConfiguration)
+	err = json.Unmarshal(jsonData, &recipeConfiguration)
 
 	if err != nil {
-		return nil, err
+		return recipeConfiguration, err
 	}
 
-	if len(imageConfiguration.Inherits) == 0 {
-		return nil, fmt.Errorf("No inherit property given for image %s", image.Name)
+	if len(recipeConfiguration.Inherits) == 0 {
+		return recipeConfiguration, fmt.Errorf("No inherit property given for image %s", recipe.Name)
 	}
 
-	return &imageConfiguration, nil
+	return recipeConfiguration, nil
 }

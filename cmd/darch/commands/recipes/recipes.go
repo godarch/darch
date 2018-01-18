@@ -18,6 +18,11 @@ var (
 		},
 		Subcommands: cli.Commands{
 			buildCommand,
+			listCommand,
 		},
 	}
 )
+
+func getRecipesDir(ctx *cli.Context) string {
+	return ctx.GlobalString("recipes-dir")
+}

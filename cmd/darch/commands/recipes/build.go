@@ -7,13 +7,12 @@ import (
 )
 
 var buildCommand = cli.Command{
-	Name:        "build",
-	Usage:       "build a recipe",
-	ArgsUsage:   "<recipe>",
-	Description: "Build a recipe.",
-	Action: func(context *cli.Context) error {
+	Name:      "build",
+	Usage:     "build a recipe",
+	ArgsUsage: "<recipe>",
+	Action: func(clicontext *cli.Context) error {
 		var (
-			recipe = context.Args().First()
+			recipe = clicontext.Args().First()
 		)
 
 		fmt.Printf("Building %s...\n", recipe)

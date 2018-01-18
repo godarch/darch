@@ -10,13 +10,12 @@ import (
 )
 
 var pullCommand = cli.Command{
-	Name:        "pull",
-	Usage:       "pull an image from a remote registry",
-	ArgsUsage:   "<image>",
-	Description: "Pull and prepare an image for use in darch.",
-	Action: func(context *cli.Context) error {
+	Name:      "pull",
+	Usage:     "pull an image from a remote registry",
+	ArgsUsage: "<image>",
+	Action: func(clicontext *cli.Context) error {
 		var (
-			image = context.Args().First()
+			image = clicontext.Args().First()
 		)
 
 		refspec, err := reference.Parse(image)
