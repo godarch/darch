@@ -3,28 +3,24 @@ package recipes
 import (
 	"fmt"
 	"log"
+	"sort"
 
 	"github.com/pauldotknopf/darch/recipes"
-	"github.com/pauldotknopf/darch/utils"
 	"github.com/urfave/cli"
 )
 
-var parentsCommand = cli.Command{
-	Name:  "parents",
-	Usage: "list all the parents of a recipe",
+var childrenCommand = cli.Command{
+	Name:  "children",
+	Usage: "list all the children for a recipe",
 	Flags: []cli.Flag{
-		cli.BoolFlag{
-			Name: "exclude-external",
-		},
 		cli.BoolFlag{
 			Name: "reverse",
 		},
 	},
 	Action: func(clicontext *cli.Context) error {
 		var (
-			recipeName      = clicontext.Args().First()
-			excludeExternal = clicontext.Bool("exclude-external")
-			reverse         = clicontext.Bool("reverse")
+			recipeName = clicontext.Args().First()
+			reverse    = clicontext.Bool("reverse")
 		)
 
 		if len(recipeName) == 0 {
@@ -43,21 +39,14 @@ var parentsCommand = cli.Command{
 
 		results := make([]string, 0)
 
-		finished := false
-		for finished != true {
-			if current.InheritsExternal {
-				if !excludeExternal {
-					results = append(results, current.Inherits)
-				}
-				finished = true
-			} else {
-				current = rs[current.Inherits]
-				results = append(results, current.Name)
+		for _, r := range rs {
+			if r.Inherits == current.Name {
+				results = append(results, r.Name)
 			}
 		}
 
 		if reverse {
-			results = utils.Reverse(results)
+			sort.Sort(sort.Reverse(sort.StringSlice(results)))
 		}
 
 		for _, result := range results {

@@ -20,6 +20,7 @@ var (
 			buildCommand,
 			listCommand,
 			parentsCommand,
+			childrenCommand,
 		},
 	}
 )
