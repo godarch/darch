@@ -1,14 +1,159 @@
 hash: 4441a8114e4ef5c60df9fdcef47a574b40b3a803a873c5aae2fa14a15688495a
-updated: 2018-01-17T16:40:08.063037879-05:00
+updated: 2018-01-17T21:17:07.627081093-05:00
 imports:
+- name: github.com/containerd/containerd
+  version: acc6011ac1b72791fc3b9517b95b1c4b8656803d
+  subpackages:
+  - api/services/containers/v1
+  - api/services/content/v1
+  - api/services/diff/v1
+  - api/services/events/v1
+  - api/services/images/v1
+  - api/services/introspection/v1
+  - api/services/leases/v1
+  - api/services/namespaces/v1
+  - api/services/snapshots/v1
+  - api/services/tasks/v1
+  - api/services/version/v1
+  - api/types
+  - api/types/task
+  - cio
+  - containers
+  - content
+  - dialer
+  - diff
+  - errdefs
+  - events
+  - events/exchange
+  - filters
+  - fs
+  - identifiers
+  - images
+  - leases
+  - linux/runctypes
+  - log
+  - mount
+  - namespaces
+  - oci
+  - platforms
+  - plugin
+  - protobuf/google/rpc
+  - reference
+  - remotes
+  - remotes/docker
+  - remotes/docker/schema1
+  - rootfs
+  - snapshots
+  - sys
+- name: github.com/containerd/continuity
+  version: b2b946a77f5973f420514090d6f6dd58b08303f0
+  subpackages:
+  - sysx
+- name: github.com/containerd/fifo
+  version: fbfb6a11ec671efbe94ad1c12c2e98773f19e1e6
+- name: github.com/containerd/typeurl
+  version: f6943554a7e7e88b3c14aad190bf05932da84788
+- name: github.com/docker/go-events
+  version: 9461782956ad83b30282bf90e31fa6a70c255ba9
 - name: github.com/gobwas/glob
   version: bea32b9cd2d6f55753d94a28e959b13f0244797a
+- name: github.com/gogo/protobuf
+  version: 160de10b2537169b5ae3e7e221d28269ef40d311
   subpackages:
-  - compiler
-  - match
-  - syntax
-  - syntax/ast
-  - syntax/lexer
-  - util/runes
-  - util/strings
+  - proto
+  - sortkeys
+  - types
+- name: github.com/golang/protobuf
+  version: 1e59b77b52bf8e4b449a57e6f79f21226d571845
+  subpackages:
+  - proto
+  - ptypes
+  - ptypes/any
+  - ptypes/duration
+  - ptypes/timestamp
+- name: github.com/Microsoft/go-winio
+  version: 7da180ee92d8bd8bb8c37fc560e673e6557c392f
+- name: github.com/opencontainers/go-digest
+  version: 279bed98673dd5bef374d3b6e4b09e2af76183bf
+- name: github.com/opencontainers/image-spec
+  version: 577479e4dc273d3779f00c223c7e0dba4cd6b8b0
+  subpackages:
+  - identity
+  - specs-go
+  - specs-go/v1
+- name: github.com/opencontainers/runc
+  version: ab4a8191679806893207d9c1e507a77ff46dafaa
+  subpackages:
+  - libcontainer/system
+  - libcontainer/user
+- name: github.com/opencontainers/runtime-spec
+  version: b2d941ef6a780da2d9982c1fb28d77ad97f54fc7
+  subpackages:
+  - specs-go
+- name: github.com/pkg/errors
+  version: e881fd58d78e04cf6d0de1217f8707c8cc2249bc
+- name: github.com/sirupsen/logrus
+  version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
+- name: github.com/urfave/cli
+  version: cfb38830724cc34fedffe9a2a29fb54fa9169cd1
+- name: golang.org/x/crypto
+  version: 13931e22f9e72ea58bb73048bc752b48c6d4d4ac
+  subpackages:
+  - ssh/terminal
+- name: golang.org/x/net
+  version: 5ccada7d0a7ba9aeb5d3aca8d3501b4c2a509fec
+  subpackages:
+  - context
+  - context/ctxhttp
+  - http2
+  - http2/hpack
+  - idna
+  - internal/timeseries
+  - lex/httplex
+  - trace
+- name: golang.org/x/sync
+  version: fd80eb99c8f653c847d294a001bdf2a3a6f768f5
+  subpackages:
+  - errgroup
+- name: golang.org/x/sys
+  version: 2c42eef0765b9837fbdab12011af7830f55f88f0
+  subpackages:
+  - unix
+  - windows
+- name: golang.org/x/text
+  version: e19ae1496984b1c655b8044a65c0300a3c878dd3
+  subpackages:
+  - secure/bidirule
+  - transform
+  - unicode/bidi
+  - unicode/norm
+- name: google.golang.org/genproto
+  version: a8101f21cf983e773d0c1133ebc5424792003214
+  subpackages:
+  - googleapis/rpc/status
+- name: google.golang.org/grpc
+  version: 08b7bd3beb5c8765c042ddc17c096308f6f1ffd7
+  subpackages:
+  - balancer
+  - balancer/base
+  - balancer/roundrobin
+  - codes
+  - connectivity
+  - credentials
+  - encoding
+  - grpclb/grpc_lb_v1/messages
+  - grpclog
+  - health/grpc_health_v1
+  - internal
+  - keepalive
+  - metadata
+  - naming
+  - peer
+  - resolver
+  - resolver/dns
+  - resolver/passthrough
+  - stats
+  - status
+  - tap
+  - transport
 testImports: []
