@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+DIRNAME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+#go build -o bin/darch github.com/pauldotknopf/darch/cmd/darch
+go run $(find $DIRNAME/cmd/darch -maxdepth 1 -name "*.go" -and -not -name "*_test.go") $@
