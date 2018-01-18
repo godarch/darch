@@ -1,5 +1,5 @@
 hash: 4441a8114e4ef5c60df9fdcef47a574b40b3a803a873c5aae2fa14a15688495a
-updated: 2018-01-17T21:17:07.627081093-05:00
+updated: 2018-01-18T08:53:08.60936809-05:00
 imports:
 - name: github.com/containerd/containerd
   version: acc6011ac1b72791fc3b9517b95b1c4b8656803d
@@ -53,6 +53,8 @@ imports:
   version: fbfb6a11ec671efbe94ad1c12c2e98773f19e1e6
 - name: github.com/containerd/typeurl
   version: f6943554a7e7e88b3c14aad190bf05932da84788
+- name: github.com/disiqueira/gotree
+  version: 4c287e3603a85571820a6a8ad100a45002150053
 - name: github.com/docker/go-events
   version: 9461782956ad83b30282bf90e31fa6a70c255ba9
 - name: github.com/gobwas/glob

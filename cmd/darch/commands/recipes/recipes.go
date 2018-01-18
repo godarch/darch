@@ -21,6 +21,7 @@ var (
 			listCommand,
 			parentsCommand,
 			childrenCommand,
+			treeCommand,
 		},
 	}
 )
