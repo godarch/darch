@@ -19,6 +19,7 @@ var (
 		Subcommands: cli.Commands{
 			buildCommand,
 			listCommand,
+			parentsCommand,
 		},
 	}
 )

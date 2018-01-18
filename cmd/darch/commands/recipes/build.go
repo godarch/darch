@@ -12,10 +12,10 @@ var buildCommand = cli.Command{
 	ArgsUsage: "<recipe>",
 	Action: func(clicontext *cli.Context) error {
 		var (
-			recipe = clicontext.Args().First()
+			recipeName = clicontext.Args().First()
 		)
 
-		fmt.Printf("Building %s...\n", recipe)
+		fmt.Printf("Building %s...\n", recipeName)
 
 		return nil
 	},
