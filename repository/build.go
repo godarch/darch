@@ -1,13 +1,14 @@
 package repository
 
 import (
-	gocontext "context"
+	"context"
 	"fmt"
 	"runtime"
 
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/cmd/ctr/commands"
 	"github.com/containerd/containerd/oci"
+	"github.com/opencontainers/image-spec/identity"
 	"github.com/urfave/cli"
 
 	"github.com/containerd/containerd"
@@ -19,9 +20,9 @@ import (
 )
 
 // BuildRecipe Builds a recipe.
-func (session *Session) BuildRecipe(context gocontext.Context, recipe recipes.Recipe, tag string, buildPrefix string, environmentVariables map[string]string) error {
+func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, tag string, buildPrefix string, environmentVariables map[string]string) error {
 
-	context = namespaces.WithNamespace(context, "darch")
+	ctx = namespaces.WithNamespace(ctx, "darch")
 
 	if len(tag) == 0 {
 		tag = "local"
@@ -37,48 +38,86 @@ func (session *Session) BuildRecipe(context gocontext.Context, recipe recipes.Re
 		inheritsRef.Object = tag
 	}
 
-	img, err := session.client.GetImage(context, inheritsRef.String())
+	img, err := session.client.GetImage(ctx, inheritsRef.String())
 	if err != nil {
 		// maybe it was because we don't have it? let's try to fetch it
-		img, err = session.Pull(context, inheritsRef.String())
-		if err != nil {
+		if img, err = session.Pull(ctx, inheritsRef.String()); err != nil {
 			return err
 		}
 	}
 
+	// Let's create the snapshot that all of our containers will run off of
+	snapshotKey := utils.NewID()
+	session.createSnapshot(ctx, snapshotKey, img)
+	defer session.deleteSnapshot(ctx, snapshotKey)
+
+	// Testing, to see if we can run multiple containers against the same snapshot.
+	if err = session.runContainer(ctx, snapshotKey, img, "touch", "/test"); err != nil {
+		return err
+	}
+
+	if err = session.runContainer(ctx, snapshotKey, img, "ls /"); err != nil {
+		return err
+	}
+
+	return err
+}
+
+func (session *Session) createSnapshot(ctx context.Context, snapshotKey string, img containerd.Image) error {
+	diffIDs, err := img.RootFS(ctx)
+	if err != nil {
+		return err
+	}
+	parent := identity.ChainID(diffIDs).String()
+	if _, err := session.client.SnapshotService(containerd.DefaultSnapshotter).Prepare(ctx, snapshotKey, parent); err != nil {
+		return err
+	}
+
+	mounts, err := session.client.SnapshotService(containerd.DefaultSnapshotter).Mounts(ctx, snapshotKey)
+
+	for _, m := range mounts {
+		fmt.Println(m.Source)
+		fmt.Println(m.Type)
+		fmt.Println(m.Options)
+	}
+
+	return nil
+}
+
+func (session *Session) runContainer(ctx context.Context, snapshotKey string, img containerd.Image, args ...string) error {
 	id := utils.NewID()
-	cntner, err := session.client.NewContainer(context,
+	container, err := session.client.NewContainer(ctx,
 		id,
 		containerd.WithImage(img),
 		containerd.WithSnapshotter(containerd.DefaultSnapshotter),
-		containerd.WithNewSnapshot(id, img),
+		containerd.WithSnapshot(snapshotKey),
 		containerd.WithRuntime(fmt.Sprintf("io.containerd.runtime.v1.%s", runtime.GOOS), nil),
 		containerd.WithNewSpec(
 			oci.WithImageConfig(img),
-			oci.WithProcessArgs("ls")))
+			oci.WithProcessArgs(args...)))
 	if err != nil {
 		return err
 	}
 
-	defer cntner.Delete(context, containerd.WithSnapshotCleanup)
+	defer container.Delete(ctx, containerd.WithSnapshotCleanup)
 
-	t, err := cntner.NewTask(context, cio.Stdio)
+	t, err := container.NewTask(ctx, cio.Stdio)
 	if err != nil {
 		return err
 	}
 
-	err = t.Start(context)
+	err = t.Start(ctx)
 	if err != nil {
 		return err
 	}
-	defer t.Delete(context)
+	defer t.Delete(ctx)
 
 	var statusC <-chan containerd.ExitStatus
-	if statusC, err = t.Wait(context); err != nil {
+	if statusC, err = t.Wait(ctx); err != nil {
 		return err
 	}
 
-	sigc := commands.ForwardAllSignals(context, t)
+	sigc := commands.ForwardAllSignals(ctx, t)
 	defer commands.StopCatch(sigc)
 
 	status := <-statusC
@@ -87,12 +126,13 @@ func (session *Session) BuildRecipe(context gocontext.Context, recipe recipes.Re
 		return err
 	}
 
-	if _, err := t.Delete(context); err != nil {
-		return err
-	}
 	if code != 0 {
 		return cli.NewExitError("", int(code))
 	}
 
 	return err
+}
+
+func (session *Session) deleteSnapshot(ctx context.Context, snapshotKey string) error {
+	return session.client.SnapshotService(containerd.DefaultSnapshotter).Remove(ctx, snapshotKey)
 }
