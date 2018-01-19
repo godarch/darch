@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+if [ ! -e root.x86_64 ]; then
+    curl https://mirrors.kernel.org/archlinux/iso/latest/archlinux-bootstrap-2018.01.01-x86_64.tar.gz | tar xpz
+fi
+
+# Let's build the base Docker image.
+# This image is a runnable Arch image, but it won't be used for much.
+# Inside of the image will be a /rootfs that will be updating.
+docker build -t darch-arch-rootfs-builder .

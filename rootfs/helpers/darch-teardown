@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e
+
+# These are scripts that run after each image build...
