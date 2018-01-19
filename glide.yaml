@@ -2,3 +2,5 @@ package: github.com/pauldotknopf/darch
 import:
 - package: github.com/gobwas/glob
   version: v0.2.2
+- package: github.com/containerd/containerd
+  version: v1.0.1

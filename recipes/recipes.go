@@ -72,3 +72,18 @@ func GetAllRecipes(recipesDir string) (map[string]Recipe, error) {
 
 	return recipes, nil
 }
+
+// GetRecipe Get a single recipe by name
+func GetRecipe(recipesDir string, recipeName string) (Recipe, error) {
+	allRecipes, err := GetAllRecipes(recipesDir)
+	if err != nil {
+		return Recipe{}, err
+	}
+
+	current, ok := allRecipes[recipeName]
+	if !ok {
+		return Recipe{}, fmt.Errorf("Recipe %s doesn't exist", recipeName)
+	}
+
+	return current, nil
+}

@@ -1,8 +1,8 @@
-hash: 4441a8114e4ef5c60df9fdcef47a574b40b3a803a873c5aae2fa14a15688495a
-updated: 2018-01-18T08:53:08.60936809-05:00
+hash: 58d0649412616c603d03ed7cd1a395d5b835a4697c6f3e1d3b2661cca77886c3
+updated: 2018-01-18T18:29:13.198872801-05:00
 imports:
 - name: github.com/containerd/containerd
-  version: acc6011ac1b72791fc3b9517b95b1c4b8656803d
+  version: 9b55aab90508bd389d7654c4baf173a981477d55
   subpackages:
   - api/services/containers/v1
   - api/services/content/v1
