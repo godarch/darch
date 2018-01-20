@@ -10,7 +10,6 @@ import (
 
 	"github.com/containerd/containerd"
 
-	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/oci"
 	"github.com/containerd/containerd/reference"
@@ -29,17 +28,6 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 		tag = "local"
 	}
 
-	session.client.ContentStore().Walk(ctx, func(content content.Info) error {
-		fmt.Println(content.Digest.String())
-		if content.Digest.String() == "sha256:1f0f5c30de52c731c9069d635337ccaa35f23042e81ebc25a77d13449cb9c19a" {
-			fmt.Println("found")
-			//session.client.DiffService().Apply()
-			var f = "sdf"
-			fmt.Println(f)
-		}
-		return nil
-	})
-
 	inheritsRef, err := reference.Parse(recipe.Inherits)
 	if err != nil {
 		return err
@@ -57,31 +45,6 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 			return err
 		}
 	}
-
-	ds, err := img.RootFS(ctx)
-	if err != nil {
-		return err
-	}
-	for _, d := range ds {
-		fmt.Println(d.String())
-	}
-
-	t := img.Target()
-	fmt.Printf("Digest %", t.Digest.String())
-
-	// im := images.Image{
-	// 	Name:   "new-image:latest",
-	// 	Target: img.Target(),
-	// 	Labels: map[string]string{
-	// 		"containerd.io/checkpoint": "true",
-	// 	},
-	// }
-
-	// img2, err := session.client.ImageService().Create(ctx, im)
-	// if err != nil {
-	// 	return err
-	// }
-	// fmt.Println(img2.Name)
 
 	ws, err := workspace.NewWorkspace("/tmp")
 	if err != nil {
@@ -164,13 +127,12 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 		return err
 	}
 
-	err = session.client.SnapshotService(containerd.DefaultSnapshotter).Commit(ctx, "test-commit-name", snapshotKey)
+	err = session.client.SnapshotService(containerd.DefaultSnapshotter).Commit(ctx, "new-snapshot-for-derived-image", snapshotKey)
 	if err != nil {
 		return err
 	}
 
 	// TODO: save image
-	//
 
 	return err
 }
