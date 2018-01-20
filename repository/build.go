@@ -10,6 +10,7 @@ import (
 
 	"github.com/containerd/containerd"
 
+	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/oci"
 	"github.com/containerd/containerd/reference"
@@ -27,6 +28,17 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 	if len(tag) == 0 {
 		tag = "local"
 	}
+
+	session.client.ContentStore().Walk(ctx, func(content content.Info) error {
+		fmt.Println(content.Digest.String())
+		if content.Digest.String() == "sha256:1f0f5c30de52c731c9069d635337ccaa35f23042e81ebc25a77d13449cb9c19a" {
+			fmt.Println("found")
+			//session.client.DiffService().Apply()
+			var f = "sdf"
+			fmt.Println(f)
+		}
+		return nil
+	})
 
 	inheritsRef, err := reference.Parse(recipe.Inherits)
 	if err != nil {
@@ -46,7 +58,17 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 		}
 	}
 
-	// This will retag the image
+	ds, err := img.RootFS(ctx)
+	if err != nil {
+		return err
+	}
+	for _, d := range ds {
+		fmt.Println(d.String())
+	}
+
+	t := img.Target()
+	fmt.Printf("Digest %", t.Digest.String())
+
 	// im := images.Image{
 	// 	Name:   "new-image:latest",
 	// 	Target: img.Target(),
@@ -101,14 +123,54 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 				oci.WithImageConfig(img),
 				oci.WithHostNamespace(specs.NetworkNamespace),
 				oci.WithMounts(mounts),
-				oci.WithProcessArgs("/usr/bin/env", "bash", "-c", fmt.Sprintf("/darch-prepare && ./darch-runrecipe %s && ./darch-teardown", recipe.Name)),
+				oci.WithProcessArgs("/usr/bin/env", "bash", "-c", "/darch-prepare"),
 			),
 		},
 	}); err != nil {
 		return err
 	}
 
+	if err = session.RunContainer(ctx, ContainerConfig{
+		newOpts: []containerd.NewContainerOpts{
+			containerd.WithImage(img),
+			containerd.WithSnapshotter(containerd.DefaultSnapshotter),
+			containerd.WithSnapshot(snapshotKey),
+			containerd.WithRuntime(fmt.Sprintf("io.containerd.runtime.v1.%s", runtime.GOOS), nil),
+			containerd.WithNewSpec(
+				oci.WithImageConfig(img),
+				oci.WithHostNamespace(specs.NetworkNamespace),
+				oci.WithMounts(mounts),
+				oci.WithProcessArgs("/usr/bin/env", "bash", "-c", fmt.Sprintf("/darch-runrecipe %s", recipe.Name)),
+			),
+		},
+	}); err != nil {
+		return err
+	}
+
+	if err = session.RunContainer(ctx, ContainerConfig{
+		newOpts: []containerd.NewContainerOpts{
+			containerd.WithImage(img),
+			containerd.WithSnapshotter(containerd.DefaultSnapshotter),
+			containerd.WithSnapshot(snapshotKey),
+			containerd.WithRuntime(fmt.Sprintf("io.containerd.runtime.v1.%s", runtime.GOOS), nil),
+			containerd.WithNewSpec(
+				oci.WithImageConfig(img),
+				oci.WithHostNamespace(specs.NetworkNamespace),
+				oci.WithMounts(mounts),
+				oci.WithProcessArgs("/usr/bin/env", "bash", "-c", "/darch-teardown"),
+			),
+		},
+	}); err != nil {
+		return err
+	}
+
+	err = session.client.SnapshotService(containerd.DefaultSnapshotter).Commit(ctx, "test-commit-name", snapshotKey)
+	if err != nil {
+		return err
+	}
+
 	// TODO: save image
+	//
 
 	return err
 }
@@ -122,7 +184,6 @@ func (session *Session) createSnapshot(ctx context.Context, snapshotKey string, 
 	if _, err := session.client.SnapshotService(containerd.DefaultSnapshotter).Prepare(ctx, snapshotKey, parent); err != nil {
 		return err
 	}
-
 	return nil
 }
 
