@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
 # These are scripts that run after each image build...
+echo "Tear down..."

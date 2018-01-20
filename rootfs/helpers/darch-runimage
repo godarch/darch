@@ -1,6 +1,0 @@
-#!/bin/bash
-set -e
-
-IMAGE_NAME="$1"
-
-/bin/bash -c "cd /images/$IMAGE_NAME/ && ./script"

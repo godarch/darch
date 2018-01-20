@@ -14,6 +14,9 @@ ADD /initcpio-hooks/darch.install usr/lib/initcpio/install/darch
 
 ADD helpers/darch-longrunning /
 ADD helpers/darch-prepare /
-ADD helpers/darch-runimage /
+ADD helpers/darch-runrecipe /
 ADD helpers/darch-teardown /
 ADD helpers/darch-extract /
+
+# Let's just add a default/good mirror to begin with
+RUN echo "Server = https://arch.mirror.square-r00t.net/\$repo/os/\$arch" >> /etc/pacman.d/mirrorlist

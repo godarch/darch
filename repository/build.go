@@ -3,20 +3,20 @@ package repository
 import (
 	"context"
 	"fmt"
+	"path"
 	"runtime"
 
-	"github.com/containerd/containerd/cio"
-	"github.com/containerd/containerd/cmd/ctr/commands"
-	"github.com/containerd/containerd/oci"
 	"github.com/opencontainers/image-spec/identity"
-	"github.com/urfave/cli"
 
 	"github.com/containerd/containerd"
 
 	"github.com/containerd/containerd/namespaces"
+	"github.com/containerd/containerd/oci"
 	"github.com/containerd/containerd/reference"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/pauldotknopf/darch/recipes"
 	"github.com/pauldotknopf/darch/utils"
+	"github.com/pauldotknopf/darch/workspace"
 )
 
 // BuildRecipe Builds a recipe.
@@ -46,19 +46,69 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 		}
 	}
 
+	// This will retag the image
+	// im := images.Image{
+	// 	Name:   "new-image:latest",
+	// 	Target: img.Target(),
+	// 	Labels: map[string]string{
+	// 		"containerd.io/checkpoint": "true",
+	// 	},
+	// }
+
+	// img2, err := session.client.ImageService().Create(ctx, im)
+	// if err != nil {
+	// 	return err
+	// }
+	// fmt.Println(img2.Name)
+
+	ws, err := workspace.NewWorkspace("/tmp")
+	if err != nil {
+		return err
+	}
+	defer workspace.DestroyWorkspace(ws)
+
+	mounts := []specs.Mount{
+		specs.Mount{
+			Destination: "/recipes",
+			Type:        "bind",
+			Source:      recipe.RecipesDir,
+			Options:     []string{"rbind", "ro"},
+		},
+	}
+
+	if utils.FileExists("/etc/resolv.conf") {
+		utils.CopyFile("/etc/resolv.conf", path.Join(ws.Path, "resolv.conf"))
+		mounts = append(mounts, specs.Mount{
+			Destination: "/etc/resolv.conf",
+			Type:        "bind",
+			Source:      path.Join(ws.Path, "resolv.conf"),
+			Options:     []string{"rbind", "rw"},
+		})
+	}
+
 	// Let's create the snapshot that all of our containers will run off of
 	snapshotKey := utils.NewID()
 	session.createSnapshot(ctx, snapshotKey, img)
 	defer session.deleteSnapshot(ctx, snapshotKey)
 
-	// Testing, to see if we can run multiple containers against the same snapshot.
-	if err = session.runContainer(ctx, snapshotKey, img, "touch", "/test"); err != nil {
+	if err = session.RunContainer(ctx, ContainerConfig{
+		newOpts: []containerd.NewContainerOpts{
+			containerd.WithImage(img),
+			containerd.WithSnapshotter(containerd.DefaultSnapshotter),
+			containerd.WithSnapshot(snapshotKey),
+			containerd.WithRuntime(fmt.Sprintf("io.containerd.runtime.v1.%s", runtime.GOOS), nil),
+			containerd.WithNewSpec(
+				oci.WithImageConfig(img),
+				oci.WithHostNamespace(specs.NetworkNamespace),
+				oci.WithMounts(mounts),
+				oci.WithProcessArgs("/usr/bin/env", "bash", "-c", fmt.Sprintf("/darch-prepare && ./darch-runrecipe %s && ./darch-teardown", recipe.Name)),
+			),
+		},
+	}); err != nil {
 		return err
 	}
 
-	if err = session.runContainer(ctx, snapshotKey, img, "ls /"); err != nil {
-		return err
-	}
+	// TODO: save image
 
 	return err
 }
@@ -73,66 +123,68 @@ func (session *Session) createSnapshot(ctx context.Context, snapshotKey string, 
 		return err
 	}
 
-	mounts, err := session.client.SnapshotService(containerd.DefaultSnapshotter).Mounts(ctx, snapshotKey)
-
-	for _, m := range mounts {
-		fmt.Println(m.Source)
-		fmt.Println(m.Type)
-		fmt.Println(m.Options)
-	}
-
 	return nil
-}
-
-func (session *Session) runContainer(ctx context.Context, snapshotKey string, img containerd.Image, args ...string) error {
-	id := utils.NewID()
-	container, err := session.client.NewContainer(ctx,
-		id,
-		containerd.WithImage(img),
-		containerd.WithSnapshotter(containerd.DefaultSnapshotter),
-		containerd.WithSnapshot(snapshotKey),
-		containerd.WithRuntime(fmt.Sprintf("io.containerd.runtime.v1.%s", runtime.GOOS), nil),
-		containerd.WithNewSpec(
-			oci.WithImageConfig(img),
-			oci.WithProcessArgs(args...)))
-	if err != nil {
-		return err
-	}
-
-	defer container.Delete(ctx, containerd.WithSnapshotCleanup)
-
-	t, err := container.NewTask(ctx, cio.Stdio)
-	if err != nil {
-		return err
-	}
-
-	err = t.Start(ctx)
-	if err != nil {
-		return err
-	}
-	defer t.Delete(ctx)
-
-	var statusC <-chan containerd.ExitStatus
-	if statusC, err = t.Wait(ctx); err != nil {
-		return err
-	}
-
-	sigc := commands.ForwardAllSignals(ctx, t)
-	defer commands.StopCatch(sigc)
-
-	status := <-statusC
-	code, _, err := status.Result()
-	if err != nil {
-		return err
-	}
-
-	if code != 0 {
-		return cli.NewExitError("", int(code))
-	}
-
-	return err
 }
 
 func (session *Session) deleteSnapshot(ctx context.Context, snapshotKey string) error {
 	return session.client.SnapshotService(containerd.DefaultSnapshotter).Remove(ctx, snapshotKey)
 }
+
+// func (session *Session) runRecipeBuild(ctx context.Context, recipe recipes.Recipe, snapshotKey string, img containerd.Image) error {
+// 	id := utils.NewID()
+// 	container, err := session.client.NewContainer(ctx,
+// 		id,
+// 		containerd.WithImage(img),
+// 		containerd.WithSnapshotter(containerd.DefaultSnapshotter),
+// 		containerd.WithSnapshot(snapshotKey),
+// 		containerd.WithRuntime(fmt.Sprintf("io.containerd.runtime.v1.%s", runtime.GOOS), nil),
+// 		containerd.WithNewSpec(
+// 			oci.WithImageConfig(img),
+// 			oci.WithHostNamespace(specs.NetworkNamespace),
+// 			oci.WithHostResolvconf,
+// 			oci.WithMounts([]specs.Mount{
+// 				specs.Mount{
+// 					Destination: "/recipes",
+// 					Type:        "bind",
+// 					Source:      recipe.RecipesDir,
+// 					Options:     []string{"rbind", "ro"},
+// 				},
+// 			}),
+// 			oci.WithProcessArgs("/usr/bin/env", "bash", "-c", fmt.Sprintf("/darch-prepare && ./darch-runrecipe %s && ./darch-teardown", recipe.Name))))
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	defer container.Delete(ctx, containerd.WithSnapshotCleanup)
+
+// 	t, err := container.NewTask(ctx, cio.NewCreator(cio.WithStdio))
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	err = t.Start(ctx)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer t.Delete(ctx)
+
+// 	var statusC <-chan containerd.ExitStatus
+// 	if statusC, err = t.Wait(ctx); err != nil {
+// 		return err
+// 	}
+
+// 	sigc := commands.ForwardAllSignals(ctx, t)
+// 	defer commands.StopCatch(sigc)
+
+// 	status := <-statusC
+// 	code, _, err := status.Result()
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	if code != 0 {
+// 		return cli.NewExitError("", int(code))
+// 	}
+
+// 	return err
+// }
