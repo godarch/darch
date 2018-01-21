@@ -16,12 +16,12 @@ var buildCommand = cli.Command{
 		cli.StringFlag{
 			Name:  "tag, t",
 			Usage: "the tag to use when building this recipe",
-			Value: ".",
+			Value: "local",
 		},
 		cli.StringFlag{
 			Name:  "image-prefix, p",
 			Usage: "the value to prepend to all image names (inherited and built)",
-			Value: ".",
+			Value: "",
 		},
 		cli.StringSliceFlag{
 			Name: "environment, e",

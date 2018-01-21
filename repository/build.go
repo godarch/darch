@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"path"
 	"runtime"
+	"encoding/json"
+	"bytes"
 
 	"github.com/opencontainers/image-spec/identity"
 
@@ -16,7 +18,12 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/pauldotknopf/darch/recipes"
 	"github.com/pauldotknopf/darch/utils"
+	"github.com/containerd/containerd/diff"
 	"github.com/pauldotknopf/darch/workspace"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/containerd/containerd/images"
+	"github.com/containerd/containerd/content"
+	digest "github.com/opencontainers/go-digest"
 )
 
 // BuildRecipe Builds a recipe.
@@ -127,14 +134,7 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 		return err
 	}
 
-	err = session.client.SnapshotService(containerd.DefaultSnapshotter).Commit(ctx, "new-snapshot-for-derived-image", snapshotKey)
-	if err != nil {
-		return err
-	}
-
-	// TODO: save image
-
-	return err
+	return session.createImageFromSnapshot(ctx, img, snapshotKey, recipe.Name + ":" + tag)
 }
 
 func (session *Session) createSnapshot(ctx context.Context, snapshotKey string, img containerd.Image) error {
@@ -153,61 +153,79 @@ func (session *Session) deleteSnapshot(ctx context.Context, snapshotKey string) 
 	return session.client.SnapshotService(containerd.DefaultSnapshotter).Remove(ctx, snapshotKey)
 }
 
-// func (session *Session) runRecipeBuild(ctx context.Context, recipe recipes.Recipe, snapshotKey string, img containerd.Image) error {
-// 	id := utils.NewID()
-// 	container, err := session.client.NewContainer(ctx,
-// 		id,
-// 		containerd.WithImage(img),
-// 		containerd.WithSnapshotter(containerd.DefaultSnapshotter),
-// 		containerd.WithSnapshot(snapshotKey),
-// 		containerd.WithRuntime(fmt.Sprintf("io.containerd.runtime.v1.%s", runtime.GOOS), nil),
-// 		containerd.WithNewSpec(
-// 			oci.WithImageConfig(img),
-// 			oci.WithHostNamespace(specs.NetworkNamespace),
-// 			oci.WithHostResolvconf,
-// 			oci.WithMounts([]specs.Mount{
-// 				specs.Mount{
-// 					Destination: "/recipes",
-// 					Type:        "bind",
-// 					Source:      recipe.RecipesDir,
-// 					Options:     []string{"rbind", "ro"},
-// 				},
-// 			}),
-// 			oci.WithProcessArgs("/usr/bin/env", "bash", "-c", fmt.Sprintf("/darch-prepare && ./darch-runrecipe %s && ./darch-teardown", recipe.Name))))
-// 	if err != nil {
-// 		return err
-// 	}
+func (session *Session) createImageFromSnapshot(ctx context.Context, img containerd.Image, activeSnapshotKey string, newReference string) error {
 
-// 	defer container.Delete(ctx, containerd.WithSnapshotCleanup)
+	contentStore := session.client.ContentStore()
+	snapshotService := session.client.SnapshotService(containerd.DefaultSnapshotter)
+	imgTarget := img.Target()
 
-// 	t, err := container.NewTask(ctx, cio.NewCreator(cio.WithStdio))
-// 	if err != nil {
-// 		return err
-// 	}
+	// First, let's get the parent image digest, so that we can
+	// later create a new one from it, with a new layer added to it.
+	p, err := content.ReadBlob(ctx, contentStore, imgTarget.Digest)
+	if err != nil {
+		return err
+	}
+	var manifest ocispec.Manifest
+	if err := json.Unmarshal(p, &manifest); err != nil {
+		return err
+	}
 
-// 	err = t.Start(ctx)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	defer t.Delete(ctx)
+	snapshot, err := snapshotService.Stat(ctx, activeSnapshotKey)
+	if err != nil {
+		return err
+	}
 
-// 	var statusC <-chan containerd.ExitStatus
-// 	if statusC, err = t.Wait(ctx); err != nil {
-// 		return err
-// 	}
+	upperMounts, err := snapshotService.Mounts(ctx, activeSnapshotKey)
+	if err != nil {
+		return err
+	}
 
-// 	sigc := commands.ForwardAllSignals(ctx, t)
-// 	defer commands.StopCatch(sigc)
+	lowerMounts, err := snapshotService.View(ctx, "temp-readonly-parent", snapshot.Parent)
+	if err != nil {
+		return err
+	}
+	defer snapshotService.Remove(ctx, "temp-readonly-parent")
 
-// 	status := <-statusC
-// 	code, _, err := status.Result()
-// 	if err != nil {
-// 		return err
-// 	}
+	diffs, err := session.client.DiffService().DiffMounts(ctx,
+		lowerMounts,
+		upperMounts,
+		diff.WithMediaType(ocispec.MediaTypeImageLayerGzip),
+		diff.WithReference("custom-ref"))
+	if err != nil {
+		return err
+	}
+	// Add our new layer to the image manifest
+	for _,layer := range manifest.Layers {
+		fmt.Println(layer.Digest)
+		fmt.Println(layer.MediaType)
+	}
+	manifest.Layers = append(manifest.Layers, diffs)
+	manifestBytes, err := json.Marshal(manifest)
+	if err != nil {
+		return err
+	}
+	manifestDigest := digest.FromBytes(manifestBytes)
+	if err := content.WriteBlob(ctx,
+		contentStore,
+		"ref1",
+		bytes.NewReader(manifestBytes),
+		int64(len(manifestBytes)),
+		manifestDigest); err != nil {
+			return err
+	}
 
-// 	if code != 0 {
-// 		return cli.NewExitError("", int(code))
-// 	}
+	_, err = session.client.ImageService().Create(ctx,
+		images.Image{
+			Name:   newReference,
+			Target: ocispec.Descriptor{
+				Digest:    manifestDigest,
+				Size:      int64(len(manifestBytes)),
+				MediaType: ocispec.MediaTypeImageManifest,
+			},
+		})
+	if err != nil {
+		return err
+	}
 
-// 	return err
-// }
+	return nil
+}
