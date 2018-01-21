@@ -208,7 +208,7 @@ func (session *Session) createImageFromSnapshot(ctx context.Context, img contain
 	manifestDigest := digest.FromBytes(manifestBytes)
 	if err := content.WriteBlob(ctx,
 		contentStore,
-		"ref1",
+		"custom-ref",
 		bytes.NewReader(manifestBytes),
 		int64(len(manifestBytes)),
 		manifestDigest); err != nil {
