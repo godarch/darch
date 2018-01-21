@@ -206,7 +206,7 @@ func (session *Session) patchImageConfig(ctx context.Context, ref string, manife
 }
 
 func (session *Session) createImageFromSnapshot(ctx context.Context, img containerd.Image, activeSnapshotKey string, newReference string) error {
-	ctx, done, err := session.client.WithLease(ctx)
+	ctx, done, err := session.client.WithLease(ctx) // Prevent garbage collection while we work.
 	if err != nil {
 		return err
 	}
@@ -274,6 +274,15 @@ func (session *Session) createImageFromSnapshot(ctx context.Context, img contain
 		return err
 	}
 
+	// Prepare the labels that will tell the garbage collector
+	// to NOT delete the content this manifest references.
+	labels := map[string]string{
+		"containerd.io/gc.ref.content.0": manifest.Config.Digest.String(),
+	}
+	for i, layer := range manifest.Layers {
+		labels[fmt.Sprintf("containerd.io/gc.ref.content.%d", i+1)] = layer.Digest.String()
+	}
+
 	// Save our new image manifest, which now hows our new layer,
 	// and a patched image config with a reference to the new layer.
 	manifestBytes, err := json.Marshal(manifest)
@@ -286,7 +295,8 @@ func (session *Session) createImageFromSnapshot(ctx context.Context, img contain
 		"custom-ref",
 		bytes.NewReader(manifestBytes),
 		int64(len(manifestBytes)),
-		manifestDigest); err != nil {
+		manifestDigest,
+		content.WithLabels(labels)); err != nil {
 		return err
 	}
 
