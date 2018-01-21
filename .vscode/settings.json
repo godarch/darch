@@ -1,5 +1,3 @@
 {
-    "go.formatFlags":[
-        "-s",
-    ]
+    "terminal.integrated.fontSize": 15
 }
