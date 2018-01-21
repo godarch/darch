@@ -154,6 +154,11 @@ func (session *Session) deleteSnapshot(ctx context.Context, snapshotKey string) 
 }
 
 func (session *Session) createImageFromSnapshot(ctx context.Context, img containerd.Image, activeSnapshotKey string, newReference string) error {
+	ctx, done, err := session.client.WithLease(ctx)
+	if err != nil {
+		return err
+	}
+	defer done()
 
 	contentStore := session.client.ContentStore()
 	snapshotService := session.client.SnapshotService(containerd.DefaultSnapshotter)
@@ -195,10 +200,6 @@ func (session *Session) createImageFromSnapshot(ctx context.Context, img contain
 		return err
 	}
 	// Add our new layer to the image manifest
-	for _,layer := range manifest.Layers {
-		fmt.Println(layer.Digest)
-		fmt.Println(layer.MediaType)
-	}
 	manifest.Layers = append(manifest.Layers, diffs)
 	manifestBytes, err := json.Marshal(manifest)
 	if err != nil {
@@ -212,6 +213,12 @@ func (session *Session) createImageFromSnapshot(ctx context.Context, img contain
 		int64(len(manifestBytes)),
 		manifestDigest); err != nil {
 			return err
+	}
+
+	// Let's see if the image exists already, if so, let's delete it
+	_, err = session.client.ImageService().Get(ctx, newReference)
+	if err == nil {
+		session.client.ImageService().Delete(ctx, newReference, images.SynchronousDelete())
 	}
 
 	_, err = session.client.ImageService().Create(ctx,
