@@ -253,6 +253,19 @@ func (session *Session) createImageFromSnapshot(ctx context.Context, img contain
 		return err
 	}
 
+	// These builds can be done on docker images, or OCI image.
+	// Let's make sure the new layer uses the same content type as the manifest expects.
+	switch imgTarget.MediaType {
+	case images.MediaTypeDockerSchema2Manifest:
+		diffs.MediaType = images.MediaTypeDockerSchema2LayerGzip
+		break
+	case ocispec.MediaTypeImageIndex:
+		diffs.MediaType = ocispec.MediaTypeImageLayerGzip
+		break
+	default:
+		return fmt.Errorf("unknown parent image manifest type")
+	}
+
 	// Add our new layer to the image manifest
 	manifest.Layers = append(manifest.Layers, diffs)
 
