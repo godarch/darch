@@ -202,10 +202,11 @@ func (session *Session) patchImageConfig(ctx context.Context, ref string, manife
 		return err
 	}
 	manifest.Config.Digest = digest.FromBytes(p)
+	manifest.Config.Size = int64(len(p))
 	err = content.WriteBlob(ctx, session.client.ContentStore(),
 		ref,
 		bytes.NewReader(p),
-		int64(len(p)),
+		manifest.Config.Size,
 		manifest.Config.Digest,
 	)
 	if err != nil {
