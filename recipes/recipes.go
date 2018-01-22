@@ -82,7 +82,7 @@ func GetRecipe(recipesDir string, recipeName string) (Recipe, error) {
 
 	current, ok := allRecipes[recipeName]
 	if !ok {
-		return Recipe{}, fmt.Errorf("Recipe %s doesn't exist", recipeName)
+		return Recipe{}, fmt.Errorf("recipe %s doesn't exist", recipeName)
 	}
 
 	return current, nil

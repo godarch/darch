@@ -1,7 +1,8 @@
 package recipes
 
 import (
-	gocontext "context"
+	"context"
+	"fmt"
 
 	"github.com/pauldotknopf/darch/recipes"
 	"github.com/pauldotknopf/darch/repository"
@@ -10,13 +11,13 @@ import (
 
 var buildCommand = cli.Command{
 	Name:      "build",
-	Usage:     "build a recipe",
-	ArgsUsage: "<recipe>",
+	Usage:     "build a recipe(s)",
+	ArgsUsage: "<recipes>",
 	Flags: []cli.Flag{
 		cli.StringFlag{
 			Name:  "tag, t",
 			Usage: "the tag to use when building this recipe",
-			Value: "local",
+			Value: "latest",
 		},
 		cli.StringFlag{
 			Name:  "image-prefix, p",
@@ -29,23 +30,38 @@ var buildCommand = cli.Command{
 	},
 	Action: func(clicontext *cli.Context) error {
 		var (
-			recipeName  = clicontext.Args().First()
 			tag         = clicontext.String("tag")
 			imagePrefix = clicontext.String("image-prefix")
+			recipeNames = clicontext.Args()
+			env         = clicontext.StringSlice("env")
 		)
 
-		recipe, err := recipes.GetRecipe(getRecipesDir(clicontext), recipeName)
+		allRecipes, err := recipes.GetAllRecipes(getRecipesDir(clicontext))
 		if err != nil {
 			return err
 		}
 
-		s, err := repository.NewSession(repository.DefaultContainerdSocketLocation)
+		// First, let's make sure all the recipes we are building exist.
+		for _, recipeName := range recipeNames {
+			if _, ok := allRecipes[recipeName]; !ok {
+				return fmt.Errorf("recipe %s doesn't exist", recipeName)
+			}
+		}
+
+		session, err := repository.NewSession(repository.DefaultContainerdSocketLocation)
 		if err != nil {
 			return err
 		}
-		defer s.Close()
 
-		err = s.BuildRecipe(gocontext.Background(), recipe, tag, imagePrefix, nil)
+		// Now, let's go through each recipe and build it.
+		for _, recipeName := range recipeNames {
+			fmt.Printf("building %s...\n", recipeName)
+			err := session.BuildRecipe(context.Background(), allRecipes[recipeName], tag, imagePrefix, env)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("built %s\n", recipeName)
+		}
 
 		return err
 	},

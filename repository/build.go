@@ -29,12 +29,19 @@ import (
 const containerdUncompressed = "containerd.io/uncompressed"
 
 // BuildRecipe Builds a recipe.
-func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, tag string, buildPrefix string, environmentVariables map[string]string) error {
+func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, tag string, imagePrefix string, env []string) error {
 
 	ctx = namespaces.WithNamespace(ctx, "darch")
 
 	if len(tag) == 0 {
-		tag = "local"
+		tag = "latest"
+	}
+
+	// Use the image prefix when inheriting local recipes.
+	// External references are expected to be fully qualified.
+	inherits := recipe.Inherits
+	if !recipe.InheritsExternal {
+		inherits = imagePrefix + inherits
 	}
 
 	inheritsRef, err := reference.Parse(recipe.Inherits)
@@ -93,6 +100,7 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 			containerd.WithRuntime(fmt.Sprintf("io.containerd.runtime.v1.%s", runtime.GOOS), nil),
 			containerd.WithNewSpec(
 				oci.WithImageConfig(img),
+				oci.WithEnv(env),
 				oci.WithHostNamespace(specs.NetworkNamespace),
 				oci.WithMounts(mounts),
 				oci.WithProcessArgs("/usr/bin/env", "bash", "-c", "/darch-prepare"),
@@ -110,6 +118,7 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 			containerd.WithRuntime(fmt.Sprintf("io.containerd.runtime.v1.%s", runtime.GOOS), nil),
 			containerd.WithNewSpec(
 				oci.WithImageConfig(img),
+				oci.WithEnv(env),
 				oci.WithHostNamespace(specs.NetworkNamespace),
 				oci.WithMounts(mounts),
 				oci.WithProcessArgs("/usr/bin/env", "bash", "-c", fmt.Sprintf("/darch-runrecipe %s", recipe.Name)),
@@ -127,6 +136,7 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 			containerd.WithRuntime(fmt.Sprintf("io.containerd.runtime.v1.%s", runtime.GOOS), nil),
 			containerd.WithNewSpec(
 				oci.WithImageConfig(img),
+				oci.WithEnv(env),
 				oci.WithHostNamespace(specs.NetworkNamespace),
 				oci.WithMounts(mounts),
 				oci.WithProcessArgs("/usr/bin/env", "bash", "-c", "/darch-teardown"),
@@ -136,7 +146,7 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 		return err
 	}
 
-	return session.createImageFromSnapshot(ctx, img, snapshotKey, recipe.Name+":"+tag)
+	return session.createImageFromSnapshot(ctx, img, snapshotKey, imagePrefix+recipe.Name+":"+tag)
 }
 
 func (session *Session) createSnapshot(ctx context.Context, snapshotKey string, img containerd.Image) error {
@@ -259,11 +269,11 @@ func (session *Session) createImageFromSnapshot(ctx context.Context, img contain
 	case images.MediaTypeDockerSchema2Manifest:
 		diffs.MediaType = images.MediaTypeDockerSchema2LayerGzip
 		break
-	case ocispec.MediaTypeImageIndex:
+	case ocispec.MediaTypeImageManifest:
 		diffs.MediaType = ocispec.MediaTypeImageLayerGzip
 		break
 	default:
-		return fmt.Errorf("unknown parent image manifest type")
+		return fmt.Errorf("unknown parent image manifest type: %s", imgTarget.MediaType)
 	}
 
 	// Add our new layer to the image manifest
@@ -325,7 +335,7 @@ func (session *Session) createImageFromSnapshot(ctx context.Context, img contain
 			Target: ocispec.Descriptor{
 				Digest:    manifestDigest,
 				Size:      int64(len(manifestBytes)),
-				MediaType: ocispec.MediaTypeImageManifest,
+				MediaType: imgTarget.MediaType, /*use same one as inherited image*/
 			},
 		})
 	if err != nil {
