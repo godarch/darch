@@ -72,3 +72,13 @@ func (session *Session) TagImage(ctx context.Context, source, destination string
 
 	return nil
 }
+
+// RemoveImage Removes an image locally.
+func (session *Session) RemoveImage(ctx context.Context, image string) error {
+	ctx = namespaces.WithNamespace(ctx, "darch")
+	ref, err := reference.ParseImage(image)
+	if err != nil {
+		return err
+	}
+	return session.client.ImageService().Delete(ctx, ref.FullName(), images.SynchronousDelete())
+}

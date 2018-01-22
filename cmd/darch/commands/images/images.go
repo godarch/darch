@@ -13,6 +13,7 @@ var (
 			pullCommand,
 			listCommand,
 			tagCommand,
+			removeCommand,
 		},
 	}
 )
