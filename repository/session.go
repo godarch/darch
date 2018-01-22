@@ -7,7 +7,6 @@ import (
 var (
 	// DefaultContainerdSocketLocation The location to the containerd socket.
 	DefaultContainerdSocketLocation = "/var/run/containerd/containerd.sock"
-	//DefaultContainerdSocketLocation = "/run/containerd/debug.sock"
 )
 
 // Session An object that represent a session to a containerd runtime.

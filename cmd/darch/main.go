@@ -6,6 +6,7 @@ import (
 
 	"github.com/pauldotknopf/darch/cmd/darch/commands/images"
 	"github.com/pauldotknopf/darch/cmd/darch/commands/recipes"
+	"github.com/pauldotknopf/darch/cmd/darch/commands/stage"
 	"github.com/urfave/cli"
 )
 
@@ -18,6 +19,7 @@ func main() {
 	app.Commands = []cli.Command{
 		images.Command,
 		recipes.Command,
+		stage.Command,
 		cli.Command{
 			Name:  "version",
 			Usage: "Print version information about darch.",
