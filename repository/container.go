@@ -2,11 +2,13 @@ package repository
 
 import (
 	"context"
+	"path"
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/cmd/ctr/commands"
 	"github.com/containerd/containerd/namespaces"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/pauldotknopf/darch/utils"
 	"github.com/urfave/cli"
 )
@@ -16,6 +18,26 @@ type ContainerConfig struct {
 	env     []string
 	newOpts []containerd.NewContainerOpts
 	delOpts []containerd.DeleteOpts
+}
+
+func createTempMounts(dir string) ([]specs.Mount, error) {
+
+	mounts := []specs.Mount{}
+
+	if utils.FileExists("/etc/resolv.conf") {
+		err := utils.CopyFile("/etc/resolv.conf", path.Join(dir, "resolv.conf"))
+		if err != nil {
+			return nil, err
+		}
+		mounts = append(mounts, specs.Mount{
+			Destination: "/etc/resolv.conf",
+			Type:        "bind",
+			Source:      path.Join(dir, "resolv.conf"),
+			Options:     []string{"rbind", "rw"},
+		})
+	}
+
+	return mounts, nil
 }
 
 // RunContainer Runs a container

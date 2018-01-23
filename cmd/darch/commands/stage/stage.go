@@ -14,6 +14,7 @@ var (
 		Usage: "manage the stage",
 		Subcommands: cli.Commands{
 			listCommand,
+			uploadCommand,
 		},
 	}
 )

@@ -7,17 +7,19 @@ import (
 	"github.com/pauldotknopf/darch/utils"
 )
 
+// Workspace The workspace.
 type Workspace struct {
 	Path string
 }
 
+// NewWorkspace Create a new temporary workspace.
 func NewWorkspace(tmpDir string) (Workspace, error) {
 	var destination = ""
 	var found = false
 
 	for !found {
 		destination = path.Join(tmpDir, utils.NewID())
-		err := os.Mkdir(destination, os.ModePerm)
+		err := os.MkdirAll(destination, os.ModePerm)
 		if err == nil {
 			found = true
 		}
@@ -28,6 +30,7 @@ func NewWorkspace(tmpDir string) (Workspace, error) {
 	}, nil
 }
 
-func DestroyWorkspace(workspace Workspace) error {
+// Destroy Destroy the workspace.
+func (workspace *Workspace) Destroy() error {
 	return os.RemoveAll(workspace.Path)
 }

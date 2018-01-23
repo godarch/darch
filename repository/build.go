@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"path"
 	"runtime"
 
 	"github.com/opencontainers/image-spec/identity"
@@ -66,30 +65,23 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 	if err != nil {
 		return err
 	}
-	defer workspace.DestroyWorkspace(ws)
+	defer ws.Destroy()
 
-	mounts := []specs.Mount{
-		specs.Mount{
-			Destination: "/recipes",
-			Type:        "bind",
-			Source:      recipe.RecipesDir,
-			Options:     []string{"rbind", "ro"},
-		},
-	}
+	mounts, err := createTempMounts(ws.Path)
 
-	if utils.FileExists("/etc/resolv.conf") {
-		utils.CopyFile("/etc/resolv.conf", path.Join(ws.Path, "resolv.conf"))
-		mounts = append(mounts, specs.Mount{
-			Destination: "/etc/resolv.conf",
-			Type:        "bind",
-			Source:      path.Join(ws.Path, "resolv.conf"),
-			Options:     []string{"rbind", "rw"},
-		})
-	}
+	mounts = append(mounts, specs.Mount{
+		Destination: "/recipes",
+		Type:        "bind",
+		Source:      recipe.RecipesDir,
+		Options:     []string{"rbind", "ro"},
+	})
 
 	// Let's create the snapshot that all of our containers will run off of
 	snapshotKey := utils.NewID()
-	session.createSnapshot(ctx, snapshotKey, img)
+	err = session.createSnapshot(ctx, snapshotKey, img)
+	if err != nil {
+		return err
+	}
 	defer session.deleteSnapshot(ctx, snapshotKey)
 
 	if err = session.RunContainer(ctx, ContainerConfig{
