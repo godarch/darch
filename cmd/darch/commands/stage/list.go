@@ -15,14 +15,12 @@ var listCommand = cli.Command{
 		if err != nil {
 			return err
 		}
-		stagedItems, err := staging.GetAllStaged(staging.DefaultStagingDirectory)
+		stagedImages, err := staging.GetAllStaged()
 		if err != nil {
 			return err
 		}
-		for _, stagedItem := range stagedItems {
-			for _, stagedItemTag := range stagedItem.Tags {
-				fmt.Println(stagedItem.Name + ":" + stagedItemTag.Name)
-			}
+		for _, stagedImage := range stagedImages {
+			fmt.Println(stagedImage.Name + ":" + stagedImage.Tag)
 		}
 		return nil
 	},

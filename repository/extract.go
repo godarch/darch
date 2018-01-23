@@ -1,20 +1,18 @@
 package repository
 
 import (
-	"archive/tar"
 	"context"
 	"fmt"
-	"io"
-	"log"
+	"os"
+	"path"
+	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/containerd/containerd"
-	"github.com/containerd/containerd/content"
-	"github.com/containerd/containerd/diff"
 	"github.com/containerd/containerd/mount"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/oci"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/pauldotknopf/darch/reference"
 	"github.com/pauldotknopf/darch/utils"
@@ -41,20 +39,13 @@ func (session *Session) ExtractImage(ctx context.Context, name string, destinati
 		return err
 	}
 
-	ws, err := workspace.NewWorkspace("/tmp")
+	tempMountsWs, err := workspace.NewWorkspace("")
 	if err != nil {
 		return err
 	}
-	defer ws.Destroy()
+	defer tempMountsWs.Destroy()
 
-	mounts, err := createTempMounts(ws.Path)
-
-	mounts = append(mounts, specs.Mount{
-		Source:      "/home/pknopf/git/darch/src/github.com/pauldotknopf/darch/rootfs/helpers/darch-extract",
-		Destination: "/darch-extract",
-		Type:        "bind",
-		Options:     []string{"rbind", "rw"},
-	})
+	mounts, err := createTempMounts(tempMountsWs.Path)
 
 	// Create the snapshot that our extraction will happen on.
 	snapshotKey := utils.NewID()
@@ -82,41 +73,25 @@ func (session *Session) ExtractImage(ctx context.Context, name string, destinati
 		return err
 	}
 
-	snapshotService := session.client.SnapshotService(containerd.DefaultSnapshotter)
-	diffService := session.client.DiffService()
-
-	upperMounts, err := snapshotService.Mounts(ctx, snapshotKey)
+	upperMounts, err := session.snapshotter.Mounts(ctx, snapshotKey)
 	if err != nil {
 		return err
 	}
 
-	desc, err := diffService.DiffMounts(ctx,
-		[]mount.Mount{},
-		upperMounts,
-		diff.WithMediaType(ocispec.MediaTypeImageLayer),
-		diff.WithReference("custom-ref"))
-
-	fmt.Println(desc.Digest)
-
-	rdrAt, err := session.client.ContentStore().ReaderAt(ctx, desc.Digest)
+	err = mount.WithTempMount(ctx, upperMounts, func(root string) error {
+		srcDir := path.Join(root, "extract")
+		return filepath.Walk(path.Join(root, "extract"), func(_path string, _f os.FileInfo, _err error) error {
+			if _err != nil {
+				return _err
+			}
+			if !_f.IsDir() && strings.HasPrefix(_path, srcDir) {
+				return utils.CopyFile(_path, path.Join(destination, _path[len(srcDir):]))
+			}
+			return nil
+		})
+	})
 	if err != nil {
 		return err
-	}
-	defer rdrAt.Close()
-
-	tr := tar.NewReader(content.NewReader(rdrAt))
-
-	for {
-		hdr, err := tr.Next()
-		if err == io.EOF {
-			// end of tar archive
-			break
-		}
-		if err != nil {
-			log.Fatalln(err)
-		}
-		fmt.Printf("Contents of %s:\n", hdr.Name)
-		fmt.Println()
 	}
 
 	return nil

@@ -2,6 +2,9 @@ package repository
 
 import (
 	"github.com/containerd/containerd"
+	"github.com/containerd/containerd/diff"
+	"github.com/containerd/containerd/images"
+	"github.com/containerd/containerd/snapshots"
 )
 
 var (
@@ -11,7 +14,10 @@ var (
 
 // Session An object that represent a session to a containerd runtime.
 type Session struct {
-	client *containerd.Client
+	client      *containerd.Client
+	snapshotter snapshots.Snapshotter
+	imagesStore images.Store
+	differ      diff.Differ
 }
 
 // NewSession creates a new session
@@ -21,8 +27,13 @@ func NewSession(containerdSocket string) (*Session, error) {
 		return nil, err
 	}
 
+	client.ImageService()
+
 	return &Session{
-		client: client,
+		client:      client,
+		snapshotter: client.SnapshotService(containerd.DefaultSnapshotter),
+		imagesStore: client.ImageService(),
+		differ:      client.DiffService(),
 	}, nil
 }
 
