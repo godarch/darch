@@ -5,9 +5,11 @@ import (
 	"os"
 
 	"github.com/pauldotknopf/darch/cmd/darch/commands/helpers"
+	"github.com/pauldotknopf/darch/cmd/darch/commands/hooks"
 	"github.com/pauldotknopf/darch/cmd/darch/commands/images"
 	"github.com/pauldotknopf/darch/cmd/darch/commands/recipes"
 	"github.com/pauldotknopf/darch/cmd/darch/commands/stage"
+
 	"github.com/urfave/cli"
 )
 
@@ -22,6 +24,7 @@ func main() {
 		recipes.Command,
 		stage.Command,
 		helpers.Command,
+		hooks.Command,
 		cli.Command{
 			Name:  "version",
 			Usage: "Print version information about darch.",

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -149,4 +150,25 @@ func CopyDir(src string, dst string) (err error) {
 	}
 
 	return
+}
+
+// GetFileLines Get all the lines from a file
+func GetFileLines(path string) ([]string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	result := []string{}
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		result = append(result, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		return result, err
+	}
+
+	return result, nil
 }
