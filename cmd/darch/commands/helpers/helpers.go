@@ -12,6 +12,7 @@ var (
 		Hidden: true,
 		Subcommands: cli.Commands{
 			globCommand,
+			globFirstMatchCommand,
 		},
 	}
 )

@@ -1,8 +1,6 @@
 package stage
 
 import (
-	"fmt"
-
 	"github.com/pauldotknopf/darch/reference"
 	"github.com/pauldotknopf/darch/staging"
 	"github.com/urfave/cli"
@@ -19,9 +17,6 @@ var tagCommand = cli.Command{
 		},
 	},
 	Action: func(clicontext *cli.Context) error {
-		if len(clicontext.Args()) != 2 {
-			return fmt.Errorf("invalid args")
-		}
 		var (
 			sourceImage      = clicontext.Args().First()
 			destinationImage = clicontext.Args().Get(1)
