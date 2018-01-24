@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/pauldotknopf/darch/cmd/darch/commands/helpers"
 	"github.com/pauldotknopf/darch/cmd/darch/commands/images"
 	"github.com/pauldotknopf/darch/cmd/darch/commands/recipes"
 	"github.com/pauldotknopf/darch/cmd/darch/commands/stage"
@@ -20,6 +21,7 @@ func main() {
 		images.Command,
 		recipes.Command,
 		stage.Command,
+		helpers.Command,
 		cli.Command{
 			Name:  "version",
 			Usage: "Print version information about darch.",
