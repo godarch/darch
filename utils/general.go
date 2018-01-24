@@ -28,3 +28,13 @@ func RemoveDuplicates(elements []string) []string {
 	// Return the new slice.
 	return result
 }
+
+// Contains Returns true of array contains the given string
+func Contains(arr []string, val string) bool {
+	for _, a := range arr {
+		if a == val {
+			return true
+		}
+	}
+	return false
+}

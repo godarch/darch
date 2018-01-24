@@ -22,6 +22,7 @@ var (
 			parentsCommand,
 			childrenCommand,
 			treeCommand,
+			builddepCommand,
 		},
 	}
 )

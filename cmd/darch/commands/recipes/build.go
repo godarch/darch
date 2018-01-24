@@ -36,6 +36,10 @@ var buildCommand = cli.Command{
 			env         = clicontext.StringSlice("env")
 		)
 
+		if len(recipeNames) == 0 {
+			return fmt.Errorf("no recipes provided")
+		}
+
 		allRecipes, err := recipes.GetAllRecipes(getRecipesDir(clicontext))
 		if err != nil {
 			return err
