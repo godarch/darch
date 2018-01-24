@@ -20,7 +20,7 @@ var listCommand = cli.Command{
 			return err
 		}
 		for _, stagedImage := range stagedImages {
-			fmt.Println(stagedImage.Name + ":" + stagedImage.Tag)
+			fmt.Println(stagedImage.Ref.FullName())
 		}
 		return nil
 	},

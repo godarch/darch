@@ -21,6 +21,13 @@ type Store interface {
 	AddTag(ref ImageRef, id string, force bool) error
 	Delete(ref ImageRef) (bool, error)
 	Get(ref ImageRef) (string, error)
+	AllImages() ([]Association, error)
+}
+
+// Association An association between an id and an image.
+type Association struct {
+	ID  string
+	Ref ImageRef
 }
 
 type store struct {
@@ -150,6 +157,23 @@ func (store *store) Get(ref ImageRef) (string, error) {
 		}
 	}
 	return "", ErrDoesNotExist
+}
+
+func (store *store) AllImages() ([]Association, error) {
+	result := []Association{}
+	for id, images := range store.Images {
+		for _, image := range images {
+			imageRef, err := ParseImage(image)
+			if err != nil {
+				return result, err
+			}
+			result = append(result, Association{
+				ID:  id,
+				Ref: imageRef,
+			})
+		}
+	}
+	return result, nil
 }
 
 func (store *store) save() error {

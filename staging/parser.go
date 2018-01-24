@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"path"
 
+	"github.com/pauldotknopf/darch/reference"
 	"github.com/pauldotknopf/darch/utils"
 )
 
@@ -20,8 +21,7 @@ type StagedImage struct {
 // StagedImageNamed A StagedImage with a name and tag
 type StagedImageNamed struct {
 	StagedImage
-	Name string
-	Tag  string
+	Ref reference.ImageRef
 }
 
 type stagedImageConfiguration struct {
