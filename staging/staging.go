@@ -11,6 +11,8 @@ var (
 	DefaultStagingDirectoryImages = path.Join(DefaultStagingDirectory, "live")
 	// DefaultStagingDirectoryTmp Temp directory for staging stuff (extracting images, running hooks, etc)
 	DefaultStagingDirectoryTmp = path.Join(DefaultStagingDirectory, "tmp")
+	// DefaultStagingImagesFile File where our staged images information lives.
+	DefaultStagingImagesFile = path.Join(DefaultStagingDirectory, "images.json")
 )
 
 // GetAllStaged Get all the staged items in the given directory.

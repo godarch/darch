@@ -2,8 +2,8 @@ package stage
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/pauldotknopf/darch/reference"
 	"github.com/pauldotknopf/darch/repository"
 	"github.com/pauldotknopf/darch/staging"
 	"github.com/pauldotknopf/darch/workspace"
@@ -14,12 +14,24 @@ var uploadCommand = cli.Command{
 	Name:      "upload",
 	Usage:     "upload local image to stage",
 	ArgsUsage: "<image[:tag]>",
+	Flags: []cli.Flag{
+		cli.BoolFlag{
+			Name:  "force",
+			Usage: "overwrite existing image with the given name",
+		},
+	},
 	Action: func(clicontext *cli.Context) error {
 		var (
 			imageName = clicontext.Args().First()
+			force     = clicontext.Bool("force")
 		)
 
 		err := checkForRoot()
+		if err != nil {
+			return err
+		}
+
+		imageRef, err := reference.ParseImage(imageName)
 		if err != nil {
 			return err
 		}
@@ -36,14 +48,12 @@ var uploadCommand = cli.Command{
 		}
 		defer ws.Destroy()
 
-		fmt.Printf("Exporting image to %s\n", ws.Path)
-
-		err = repo.ExtractImage(context.Background(), imageName, ws.Path)
+		err = repo.ExtractImage(context.Background(), imageRef, ws.Path)
 		if err != nil {
 			return err
 		}
 
-		err = staging.UploadDirectoryWithMove(ws.Path, imageName)
+		err = staging.UploadDirectoryWithMove(ws.Path, imageRef, force)
 		if err != nil {
 			return err
 		}

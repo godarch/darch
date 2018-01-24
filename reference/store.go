@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/docker/docker/pkg/ioutils"
 )
@@ -25,7 +24,8 @@ type Store interface {
 }
 
 type store struct {
-	mu sync.RWMutex
+	// TODO: make this object thread safe
+	//mu sync.RWMutex
 	// jsonPath is the path to the file where the serialized tag data is
 	// stored.
 	jsonPath string

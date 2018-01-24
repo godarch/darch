@@ -20,7 +20,7 @@ import (
 )
 
 // ExtractImage Extracts an image (with tag) to a specified directory
-func (session *Session) ExtractImage(ctx context.Context, name string, destination string) error {
+func (session *Session) ExtractImage(ctx context.Context, imageRef reference.ImageRef, destination string) error {
 	ctx = namespaces.WithNamespace(ctx, "darch")
 
 	ctx, done, err := session.client.WithLease(ctx) // Prevent garbage collection while we work.
@@ -29,12 +29,7 @@ func (session *Session) ExtractImage(ctx context.Context, name string, destinati
 	}
 	defer done()
 
-	imgRef, err := reference.ParseImage(name)
-	if err != nil {
-		return err
-	}
-
-	img, err := session.client.GetImage(ctx, imgRef.FullName())
+	img, err := session.client.GetImage(ctx, imageRef.FullName())
 	if err != nil {
 		return err
 	}
