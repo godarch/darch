@@ -15,10 +15,17 @@ var listCommand = cli.Command{
 		if err != nil {
 			return err
 		}
-		stagedImages, err := staging.GetAllStaged()
+
+		session, err := staging.NewSession()
 		if err != nil {
 			return err
 		}
+
+		stagedImages, err := session.GetAllStaged()
+		if err != nil {
+			return err
+		}
+
 		for _, stagedImage := range stagedImages {
 			fmt.Println(stagedImage.Ref.FullName())
 		}

@@ -31,7 +31,7 @@ type stagedImageConfiguration struct {
 }
 
 // ParseImageDir Parses an image directory, and also validates it.
-func ParseImageDir(imageDir string) (StagedImage, error) {
+func parseImageDir(imageDir string) (StagedImage, error) {
 	result := StagedImage{}
 	result.Dir = imageDir
 

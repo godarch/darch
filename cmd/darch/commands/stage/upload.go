@@ -42,6 +42,11 @@ var uploadCommand = cli.Command{
 		}
 		defer repo.Close()
 
+		stagingSession, err := staging.NewSession()
+		if err != nil {
+			return err
+		}
+
 		ws, err := workspace.NewWorkspace(staging.DefaultStagingDirectoryTmp)
 		if err != nil {
 			return err
@@ -53,7 +58,7 @@ var uploadCommand = cli.Command{
 			return err
 		}
 
-		err = staging.UploadDirectoryWithMove(ws.Path, imageRef, force)
+		err = stagingSession.UploadDirectoryWithMove(ws.Path, imageRef, force)
 		if err != nil {
 			return err
 		}

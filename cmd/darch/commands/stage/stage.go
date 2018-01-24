@@ -15,6 +15,7 @@ var (
 		Subcommands: cli.Commands{
 			listCommand,
 			uploadCommand,
+			removeCommand,
 		},
 	}
 )

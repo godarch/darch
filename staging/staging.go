@@ -2,8 +2,6 @@ package staging
 
 import (
 	"path"
-
-	"github.com/pauldotknopf/darch/reference"
 )
 
 var (
@@ -18,22 +16,17 @@ var (
 )
 
 // GetAllStaged Get all the staged items in the given directory.
-func GetAllStaged() ([]StagedImageNamed, error) {
+func (session *Session) GetAllStaged() ([]StagedImageNamed, error) {
 	result := []StagedImageNamed{}
 
-	imageStore, err := reference.NewReferenceStore(DefaultStagingImagesFile)
-	if err != nil {
-		return result, err
-	}
-
-	associations, err := imageStore.AllImages()
+	associations, err := session.imageStore.AllImages()
 	if err != nil {
 		return result, err
 	}
 
 	for _, association := range associations {
 		imageDir := path.Join(DefaultStagingDirectoryImages, association.ID)
-		image, err := ParseImageDir(imageDir)
+		image, err := parseImageDir(imageDir)
 		if err != nil {
 			return result, err
 		}
