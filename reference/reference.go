@@ -7,17 +7,18 @@ import (
 	containerdref "github.com/containerd/containerd/reference"
 )
 
-type Image struct {
+// ImageRef An image reference.
+type ImageRef struct {
 	Name string
 	Tag  string
 }
 
 // ParseImage Parses a string for image:tag.
-func ParseImage(val string) (Image, error) {
+func ParseImage(val string) (ImageRef, error) {
 	if len(val) == 0 {
-		return Image{}, fmt.Errorf("no image name provided")
+		return ImageRef{}, fmt.Errorf("no image name provided")
 	}
-	result := Image{}
+	result := ImageRef{}
 	spec, err := containerdref.Parse(val)
 	if err != nil {
 		return result, err
@@ -45,6 +46,6 @@ func ParseImage(val string) (Image, error) {
 }
 
 // FullName Returns image:tag for the image reference.
-func (image Image) FullName() string {
+func (image ImageRef) FullName() string {
 	return image.Name + ":" + image.Tag
 }
