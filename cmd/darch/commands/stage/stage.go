@@ -16,6 +16,7 @@ var (
 			listCommand,
 			uploadCommand,
 			removeCommand,
+			tagCommand,
 		},
 	}
 )
