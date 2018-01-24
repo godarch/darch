@@ -121,3 +121,57 @@ func TestTagTwiceDifferentIdForce(t *testing.T) {
 		t.Fatalf("should have forced the update to new id")
 	}
 }
+
+func TestErrorReturnDeleteNonExistingImage(t *testing.T) {
+	jsonFile := path.Join(os.TempDir(), utils.NewID())
+	defer os.RemoveAll(jsonFile)
+
+	store, err := NewReferenceStore(jsonFile)
+	if err != nil {
+		t.Fatalf("error creating store %v", err)
+	}
+
+	nonExistantImage, _ := ParseImage("base:latest")
+
+	result, err := store.Delete(nonExistantImage)
+	if err != ErrDoesNotExist {
+		t.Fatalf("wrong error returned")
+	}
+	if result {
+		t.Fatalf("says we updated, when we shouldn't have")
+	}
+}
+
+func TestGetImagesForId(t *testing.T) {
+	jsonFile := path.Join(os.TempDir(), utils.NewID())
+	defer os.RemoveAll(jsonFile)
+
+	store, err := NewReferenceStore(jsonFile)
+	if err != nil {
+		t.Fatalf("error creating store %v", err)
+	}
+
+	id := utils.NewID()
+	newImage1, _ := ParseImage("base:latest")
+	newImage2, _ := ParseImage("base2:latest")
+
+	err = store.AddTag(newImage1, id, false)
+	if err != nil {
+		t.Fatalf("couldn't add image")
+	}
+	err = store.AddTag(newImage2, id, false)
+	if err != nil {
+		t.Fatalf("couln't add image")
+	}
+
+	images, err := store.References(id)
+	if len(images) != 2 {
+		t.Fatal("invalid images count")
+	}
+	if images[0].FullName() != "base:latest" {
+		t.Fatalf("invalid image")
+	}
+	if images[1].FullName() != "base2:latest" {
+		t.Fatalf("invalid image")
+	}
+}
