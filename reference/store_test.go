@@ -46,7 +46,7 @@ func TestTag(t *testing.T) {
 		t.Fatalf("error getting id %v", err)
 	}
 
-	if retrievedID != newID {
+	if retrievedID.ID != newID {
 		t.Fatalf("invalid id retrieved")
 	}
 }

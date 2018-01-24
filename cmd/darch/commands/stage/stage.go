@@ -17,6 +17,7 @@ var (
 			uploadCommand,
 			removeCommand,
 			tagCommand,
+			runHooksCommand,
 		},
 	}
 )

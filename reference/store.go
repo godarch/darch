@@ -20,7 +20,7 @@ type Store interface {
 	References(id string) ([]ImageRef, error)
 	AddTag(ref ImageRef, id string, force bool) error
 	Delete(ref ImageRef) (bool, error)
-	Get(ref ImageRef) (string, error)
+	Get(ref ImageRef) (Association, error)
 	AllImages() ([]Association, error)
 }
 
@@ -85,15 +85,15 @@ func (store *store) References(id string) ([]ImageRef, error) {
 
 func (store *store) AddTag(ref ImageRef, id string, force bool) error {
 	// First, make sure it doesn't exist
-	existingID, err := store.Get(ref)
+	existing, err := store.Get(ref)
 	if err == ErrDoesNotExist {
 		// This is fine
 	} else if err != nil {
 		return err
-	} else if existingID == id {
+	} else if existing.ID == id {
 		// Already added
 		return nil
-	} else if existingID != id {
+	} else if existing.ID != id {
 		if !force {
 			return fmt.Errorf("tag already added")
 		}
@@ -148,15 +148,18 @@ func (store *store) Delete(ref ImageRef) (bool, error) {
 	return true, store.save()
 }
 
-func (store *store) Get(ref ImageRef) (string, error) {
+func (store *store) Get(ref ImageRef) (Association, error) {
 	for id, images := range store.Images {
 		for _, image := range images {
 			if image == ref.FullName() {
-				return id, nil
+				return Association{
+					ID:  id,
+					Ref: ref,
+				}, nil
 			}
 		}
 	}
-	return "", ErrDoesNotExist
+	return Association{}, ErrDoesNotExist
 }
 
 func (store *store) AllImages() ([]Association, error) {

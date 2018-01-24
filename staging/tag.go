@@ -9,5 +9,5 @@ func (session *Session) Tag(sourceImageRef, destinationImageRef reference.ImageR
 		return err
 	}
 
-	return session.imageStore.AddTag(destinationImageRef, sourceID, force)
+	return session.imageStore.AddTag(destinationImageRef, sourceID.ID, force)
 }
