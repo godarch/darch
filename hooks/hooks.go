@@ -59,7 +59,7 @@ func getHooksConfiguration() (map[string]hookConfiguration, error) {
 	if !utils.FileExists(DefaultHooksConfigLocation) {
 		// No file exists, assume just a default entry.
 		return map[string]hookConfiguration{
-			"default": buildDefaultHookEntry(),
+			"_default": buildDefaultHookEntry(),
 		}, nil
 	}
 

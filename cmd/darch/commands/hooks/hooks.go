@@ -12,6 +12,7 @@ var (
 		Subcommands: cli.Commands{
 			listCommand,
 			helpCommand,
+			detailsCommand,
 		},
 	}
 )
