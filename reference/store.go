@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/docker/docker/pkg/ioutils"
+	"github.com/pauldotknopf/darch/utils"
 )
 
 var (
@@ -54,6 +56,13 @@ func NewReferenceStore(jsonPath string) (Store, error) {
 
 	// Load the json file if it exists, otherwise create it.
 	if err := store.reload(); os.IsNotExist(err) {
+		parentDir := path.Join(path.Dir(jsonPath))
+		if !utils.DirectoryExists(parentDir) {
+			err = os.MkdirAll(parentDir, os.ModePerm)
+			if err != nil {
+				return nil, err
+			}
+		}
 		if err := store.save(); err != nil {
 			return nil, err
 		}

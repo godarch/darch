@@ -173,7 +173,7 @@ func GetHooks() ([]Hook, error) {
 	for _, hook := range hooks {
 		newHook := Hook{
 			Name:      hook,
-			HooksPath: "/var/darch/hooks",
+			HooksPath: DefaultHooksPath,
 		}
 		newHook.Path = path.Join(newHook.HooksPath, newHook.Name)
 		var config hookConfiguration

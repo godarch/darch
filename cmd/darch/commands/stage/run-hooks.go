@@ -30,7 +30,7 @@ var runHooksCommand = cli.Command{
 			if err != nil {
 				return err
 			}
-			return stagingSession.RunHookForImage(imageRef)
+			return stagingSession.RunHooksForImage(imageRef)
 		}
 
 		return stagingSession.RunAllHooks()
