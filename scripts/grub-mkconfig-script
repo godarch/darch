@@ -5,7 +5,7 @@ set -e
 source /etc/grub.d/10_linux > /dev/null 2>&1
 
 # Get a list of staged items from darch
-data=$(darch stage list | tail -n +2)
+data=$(darch stage grub)
 
 while read -r entry; do
     # Extract all our image variables

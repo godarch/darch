@@ -18,6 +18,7 @@ var (
 			removeCommand,
 			tagCommand,
 			runHooksCommand,
+			grubCommand,
 		},
 	}
 )
