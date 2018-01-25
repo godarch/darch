@@ -2,3 +2,5 @@ vendor/
 cmd/darch/debug
 bundle/
 bin/
+scripts/aur/arch.key
+scripts/aur/PKGBUILD

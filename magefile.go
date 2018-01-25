@@ -146,13 +146,13 @@ func Release() error {
 	mg.Deps(
 		ensureGithubRelease,
 	)
+
 	if !isTagBuild {
 		fmt.Println("no a tag build, skipping release")
 		return nil
 	}
 
-	fmt.Println("pushing release to github")
-
+	fmt.Println("creating release in github")
 	err := sh.Run("github-release",
 		"release",
 		"--user",
@@ -166,7 +166,8 @@ func Release() error {
 		return err
 	}
 
-	return sh.Run("github-release",
+	fmt.Println("uploading release to github")
+	err = sh.Run("github-release",
 		"upload",
 		"--user",
 		"pauldotknopf",
@@ -178,6 +179,12 @@ func Release() error {
 		fmt.Sprintf("darch-%s.tar.gz", goarch),
 		"--file",
 		fmt.Sprintf("bundle/darch-%s.tar.gz", goarch))
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("updating arch aur")
+	return sh.Run("scripts/aur/deploy-aur", version)
 }
 
 func CI() error {
