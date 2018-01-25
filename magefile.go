@@ -38,8 +38,7 @@ func init() {
 
 	// Get the version number for the build.
 	travisTag, exists := os.LookupEnv("TRAVIS_TAG")
-	if exists {
-		tag = travisTag
+	if exists && len(travisTag) > 0 {
 		if strings.HasPrefix(travisTag, "v") {
 			version = travisTag[1:]
 		} else {
