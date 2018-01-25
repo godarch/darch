@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+
+if [[ ! $EUID -eq 0 ]]; then
+    echo "This script should only be run as root user."
+    exit 1
+fi
+
+
+if [ -z "$DARCH_TAG" ]; then
+    DARCH_TAG=`curl https://api.github.com/repos/pauldotknopf/darch/releases/latest -s | jq .tag_name -r`
+    if [ -z "$DARCH_TAG" ]; then
+        echo Could not get the latest tag from GitHub.
+        exit 1
+    fi
+fi
+
+echo "Installing tag: $DARCH_TAG"
+
+echo "Downloading and extracting..."
+wget -O- -q https://github.com/pauldotknopf/darch/releases/download/$DARCH_TAG/darch-amd64.tar.gz | tar xpz -C /
+
+echo "Verifying installation..."
+darch version
+
+echo "Darch is now installed!"
