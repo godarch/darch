@@ -1,0 +1,40 @@
+#!/bin/bash
+set -e
+
+PACKAGE_VERSION="$1"
+
+if [ -z "$PACKAGE_VERSION" ]; then
+    echo "no package version"
+    exit 1
+fi
+
+DIRNAME="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIRNAME
+
+echo "Updating PKGBUILD for $PACKAGE_VERSION..."
+
+# Extract our enrypted ssh key.
+openssl aes-256-cbc -K $encrypted_006e19af42e6_key -iv $encrypted_006e19af42e6_iv -in arch.key.enc -out arch.key -d
+chmod 400 arch.key
+eval `ssh-agent -s`
+ssh-add arch.key
+
+ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+git clone ssh://aur@aur.archlinux.org/darch.git aur
+
+cd aur
+
+git config user.email pauldotknopf@gmail.com
+git config user.name "Paul Knopf"
+
+cp $DIRNAME/PKGBUILD-template PKGBUILD
+
+sed -i -e "s/PKGVER/$PACKAGE_VERSION/g" PKGBUILD
+sed -i -e "s/PKGREL/1/g" PKGBUILD
+
+chmod -R 0777 `pwd`
+docker run --rm -v $(pwd):/working --user 1000 -w /working aitorpazos/archlinux-docker-makepkg bash -c "updpkgsums && makepkg --printsrcinfo > .SRCINFO"
+
+git add PKGBUILD .SRCINFO
+git commit -m "Auto update from to $PACKAGE_VERSION."
+git push origin master
