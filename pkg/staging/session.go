@@ -7,12 +7,13 @@ import (
 	"github.com/pauldotknopf/darch/pkg/utils"
 )
 
+// Session A staging session.
 type Session struct {
 	imageStore reference.Store
 	imagesDir  string
 }
 
-// NewSession creates a new session
+// NewSession Create a new staging session.
 func NewSession() (*Session, error) {
 	imageStore, err := reference.NewReferenceStore(DefaultStagingImagesFile)
 	if err != nil {

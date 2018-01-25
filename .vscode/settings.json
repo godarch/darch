@@ -1,3 +1,7 @@
 {
-    "terminal.integrated.fontSize": 15
+    "terminal.integrated.fontSize": 15,
+    "go.formatTool": "gofmt",
+    "go.formatFlags": [
+        "-s"
+    ]
 }

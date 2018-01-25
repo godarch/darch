@@ -9,6 +9,7 @@ import (
 	"github.com/pauldotknopf/darch/pkg/reference"
 )
 
+// Image An image fetched from the repository.
 type Image struct {
 	Name      string
 	Tag       string

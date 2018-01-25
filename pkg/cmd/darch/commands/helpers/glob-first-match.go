@@ -38,7 +38,7 @@ var globFirstMatchCommand = cli.Command{
 			}
 
 			globPattern := line[:delimiterPosition]
-			globValue := line[delimiterPosition+1 : len(line)]
+			globValue := line[delimiterPosition+1:]
 
 			if len(globPattern) == 0 {
 				return fmt.Errorf("invalid entry \"%s\"", line)

@@ -1,0 +1,33 @@
+#!/usr/bin/env sh
+set -e
+
+help() {
+    echo "Help..."
+}
+
+install() {
+    local glob_config_file="$DARCH_HOOKS_DIR/fstab.config"
+    if [ ! -e "$glob_config_file" ]; then
+        echo "Glob config doesn't exist, not using any fstab..."
+        exit 0
+    fi
+
+    local glob_match=`darch helpers glob-config-first-match $glob_config_file $DARCH_IMAGE_NAME`
+    if [ $? != 0 ]; then
+        echo "Couldn't match with fstab.config..."
+        echo "$glob_match"
+        exit 1
+    fi
+
+    local fstab_file
+    pushd "$DARCH_HOOKS_DIR" > /dev/null 2>&1
+    fstab_file=`readlink -f $glob_match`
+    popd > /dev/null 2>&1
+
+    cp "$fstab_file" "fstab"
+}
+
+run() {
+    rm -f "$DARCH_ROOT_FS/etc/fstab"
+    cp "$DARCH_HOOK_DIR/fstab" "$DARCH_ROOT_FS/etc/fstab"
+}

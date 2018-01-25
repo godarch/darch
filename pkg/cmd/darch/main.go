@@ -31,7 +31,7 @@ func main() {
 		stage.Command,
 		helpers.Command,
 		hooks.Command,
-		cli.Command{
+		{
 			Name:  "version",
 			Usage: "Print version information about darch.",
 			Action: func(c *cli.Context) error {

@@ -1,0 +1,9 @@
+sudo: required
+language: go
+go:
+  - 1.9.2
+go_import_path: github.com/pauldotknopf/darch
+install:
+  - go get github.com/magefile/mage
+script:
+  - mage ci

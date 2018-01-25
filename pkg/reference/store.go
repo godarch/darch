@@ -204,9 +204,6 @@ func (store *store) reload() error {
 		return err
 	}
 	defer f.Close()
-	if err := json.NewDecoder(f).Decode(&store); err != nil {
-		return err
-	}
 
-	return nil
+	return json.NewDecoder(f).Decode(&store)
 }
