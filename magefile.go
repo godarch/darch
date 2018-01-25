@@ -21,8 +21,8 @@ var goexe = "go"
 var goarch = "amd64"
 var version = ""
 var hash = ""
-var isTagBuild = false
 var tag = ""
+var isTagBuild = false
 
 func init() {
 	if exe := os.Getenv("GOEXE"); exe != "" {
@@ -39,13 +39,15 @@ func init() {
 	// Get the version number for the build.
 	travisTag, exists := os.LookupEnv("TRAVIS_TAG")
 	if exists && len(travisTag) > 0 {
+		tag = travisTag
+		isTagBuild = true
 		if strings.HasPrefix(travisTag, "v") {
 			version = travisTag[1:]
 		} else {
 			version = travisTag
 		}
-		isTagBuild = true
 	} else {
+		// TODO: get current tag, if any. Or, use gitversion.
 		version = "NA"
 	}
 
@@ -54,6 +56,11 @@ func init() {
 	} else {
 		hash = "NA"
 	}
+
+	fmt.Printf("version: %v\n", version)
+	fmt.Printf("hash: %v\n", hash)
+	fmt.Printf("tag: %v\n", tag)
+	fmt.Printf("istagbuild: %v\n", isTagBuild)
 }
 
 // Install Go Dep and sync Hugo's vendored dependencies
