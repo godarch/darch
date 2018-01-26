@@ -17,13 +17,16 @@ var builddepCommand = cli.Command{
 			recipeNames = clicontext.Args()
 		)
 
-		if len(recipeNames) == 0 {
-			return fmt.Errorf("no recipes provided")
-		}
-
 		allRecipes, err := recipes.GetAllRecipes(getRecipesDir(clicontext))
 		if err != nil {
 			return err
+		}
+
+		if len(recipeNames) == 0 {
+			// We want dependencies for all images.
+			for _, recipe := range allRecipes {
+				recipeNames = append(recipeNames, recipe.Name)
+			}
 		}
 
 		// First, let's make sure all the recipes we are building exist.
