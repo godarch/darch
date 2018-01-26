@@ -16,9 +16,9 @@ import (
 
 var (
 	// DefaultHooksConfigLocation Where the hooks configuration lives.
-	DefaultHooksConfigLocation = "/var/lib/darch/hooks/hooks-config.json"
+	DefaultHooksConfigLocation = "/etc/darch/hooks/hooks-config.json"
 	// DefaultHooksPath Where the hooks live.
-	DefaultHooksPath = "/var/lib/darch/hooks/"
+	DefaultHooksPath = "/etc/darch/hooks/"
 )
 
 // Hook A hook to be applied to images
