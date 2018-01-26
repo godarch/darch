@@ -38,6 +38,16 @@ var tagCommand = cli.Command{
 			return err
 		}
 
-		return stagingSession.Tag(sourceImageRef, destinationImageRef, force)
+		err = stagingSession.Tag(sourceImageRef, destinationImageRef, force)
+		if err != nil {
+			return err
+		}
+
+		// Run hooks for the newly tagged image.
+		if err != nil {
+			return stagingSession.RunHooksForImage(destinationImageRef)
+		}
+
+		return nil
 	},
 }

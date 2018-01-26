@@ -64,6 +64,11 @@ var uploadCommand = cli.Command{
 		}
 		ws.MarkDestroyed() // prevent defered Destroy() from working, since we moved the directory to where it should be.
 
+		// Run hooks for the new image.
+		if err != nil {
+			return stagingSession.RunHooksForImage(imageRef)
+		}
+
 		return nil
 	},
 }
