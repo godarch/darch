@@ -45,17 +45,25 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 	// External references are expected to be fully qualified.
 	inherits := recipe.Inherits
 	if !recipe.InheritsExternal {
+		fmt.Printf("Not going external: %s\n", inherits)
 		inherits = imagePrefix + inherits
+		fmt.Println("--" + inherits)
 	}
 
-	inheritsRef, err := reference.ParseImage(recipe.Inherits)
+	// NOTE: We use ParseImageWithDefaultTag here.
+	// This allows recipes to use specific tags, but when
+	// they aren't, it uses the tag the we are building
+	// the recipe with.
+	// This allows use to "darch build -t custom-tag base base-common"
+	// and each built image will use the appropriate inherited image.
+	inheritsRef, err := reference.ParseImageWithDefaultTag(inherits, newImage.Tag)
 	if err != nil {
 		return newImage, err
 	}
 
 	img, err := session.client.GetImage(ctx, inheritsRef.FullName())
 	if err != nil {
-		return newImage, nil
+		return newImage, err
 	}
 
 	ws, err := workspace.NewWorkspace("/tmp")
