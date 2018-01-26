@@ -104,7 +104,7 @@ func Bundle() error {
 		cleanBundle)
 	os.Mkdir("bundle", os.ModePerm)
 
-	fmt.Println("placing bundle/bin/darch")
+	fmt.Println("placing bundle/usr/bin/darch")
 	if err := copyFile("bin/darch", "bundle/usr/bin/darch"); err != nil {
 		return err
 	}
@@ -136,6 +136,34 @@ func Bundle() error {
 		"usr/bin/darch",
 		"etc/grub.d/60_darch",
 		"etc/darch/hooks"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func Install() error {
+	mg.Deps(
+		Bundle,
+	)
+
+	fmt.Println("placing /usr/bin/darch")
+	if err := copyFile("bin/darch", "/usr/bin/darch"); err != nil {
+		return err
+	}
+
+	fmt.Println("placing /etc/darch/hooks/fstab/hook")
+	if err := copyFile("scripts/hooks/fstab", "/etc/darch/hooks/fstab/hook"); err != nil {
+		return err
+	}
+
+	fmt.Println("placing /etc/darch/hooks/hostname/hook")
+	if err := copyFile("scripts/hooks/hostname", "/etc/darch/hooks/hostname/hook"); err != nil {
+		return err
+	}
+
+	fmt.Println("placing /etc/grub.d/60_darch")
+	if err := copyFile("scripts/grub-mkconfig-script", "/etc/grub.d/60_darch"); err != nil {
 		return err
 	}
 

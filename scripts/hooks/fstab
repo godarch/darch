@@ -28,6 +28,8 @@ install() {
 }
 
 run() {
-    rm -f "$DARCH_ROOT_FS/etc/fstab"
-    cp "$DARCH_HOOK_DIR/fstab" "$DARCH_ROOT_FS/etc/fstab"
+    if [ -e "$DARCH_HOOK_DIR/fstab" ]; then
+        rm -f "$DARCH_ROOT_FS/etc/fstab"
+        cp "$DARCH_HOOK_DIR/fstab" "$DARCH_ROOT_FS/etc/fstab"
+    fi
 }

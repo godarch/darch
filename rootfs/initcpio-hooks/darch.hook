@@ -60,12 +60,14 @@ mount_handler_darch() {
         launch_interactive_shell
     fi
 
-    for hook_dir in ${path}/hooks/*; do
-        hook_name=`basename ${hook_dir}`
-        export DARCH_ROOT_FS="${destination_root}"
-        export DARCH_HOOK_DIR="${path}/hooks/${hook_name}"
-        /usr/bin/env sh -c ". $DARCH_HOOK_DIR/hook && run"
-    done
+    if [ -e "${path}/hooks" ]; then
+        for hook_dir in ${path}/hooks/*; do
+            hook_name=`basename ${hook_dir}`
+            export DARCH_ROOT_FS="${destination_root}"
+            export DARCH_HOOK_DIR="${path}/hooks/${hook_name}"
+            /usr/bin/env sh -c ". $DARCH_HOOK_DIR/hook && run"
+        done
+    fi
 }
 
 run_hook() {
