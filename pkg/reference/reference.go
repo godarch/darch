@@ -45,6 +45,15 @@ func ParseImage(val string) (ImageRef, error) {
 	return result, nil
 }
 
+// WithTag Changes the tag of a image reference.
+func (image ImageRef) WithTag(tag string) (ImageRef, error) {
+	if len(tag) == 0 {
+		return image, fmt.Errorf("tag required")
+	}
+	image.Tag = tag
+	return image, nil
+}
+
 // FullName Returns image:tag for the image reference.
 func (image ImageRef) FullName() string {
 	return image.Name + ":" + image.Tag

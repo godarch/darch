@@ -16,11 +16,11 @@ import (
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/oci"
-	"github.com/containerd/containerd/reference"
 	digest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/pauldotknopf/darch/pkg/recipes"
+	"github.com/pauldotknopf/darch/pkg/reference"
 	"github.com/pauldotknopf/darch/pkg/utils"
 	"github.com/pauldotknopf/darch/pkg/workspace"
 )
@@ -28,12 +28,17 @@ import (
 const containerdUncompressed = "containerd.io/uncompressed"
 
 // BuildRecipe Builds a recipe.
-func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, tag string, imagePrefix string, env []string) error {
+func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, tag string, imagePrefix string, env []string) (reference.ImageRef, error) {
 
 	ctx = namespaces.WithNamespace(ctx, "darch")
 
 	if len(tag) == 0 {
 		tag = "latest"
+	}
+
+	newImage, err := reference.ParseImage(imagePrefix + recipe.Name + ":" + tag)
+	if err != nil {
+		return reference.ImageRef{}, err
 	}
 
 	// Use the image prefix when inheriting local recipes.
@@ -43,27 +48,22 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 		inherits = imagePrefix + inherits
 	}
 
-	inheritsRef, err := reference.Parse(recipe.Inherits)
+	inheritsRef, err := reference.ParseImage(recipe.Inherits)
 	if err != nil {
-		return err
+		return newImage, err
 	}
 
-	// If inherited image defines no tag, use the tag we are building with
-	if len(inheritsRef.Object) == 0 {
-		inheritsRef.Object = tag
-	}
-
-	img, err := session.client.GetImage(ctx, inheritsRef.String())
+	img, err := session.client.GetImage(ctx, inheritsRef.FullName())
 	if err != nil {
 		// maybe it was because we don't have it? let's try to fetch it
-		if img, err = session.Pull(ctx, inheritsRef.String()); err != nil {
-			return err
+		if img, err = session.Pull(ctx, inheritsRef.FullName()); err != nil {
+			return newImage, err
 		}
 	}
 
 	ws, err := workspace.NewWorkspace("/tmp")
 	if err != nil {
-		return err
+		return newImage, err
 	}
 	defer ws.Destroy()
 
@@ -80,7 +80,7 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 	snapshotKey := utils.NewID()
 	err = session.createSnapshot(ctx, snapshotKey, img)
 	if err != nil {
-		return err
+		return newImage, err
 	}
 	defer session.deleteSnapshot(ctx, snapshotKey)
 
@@ -99,7 +99,7 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 			),
 		},
 	}); err != nil {
-		return err
+		return newImage, err
 	}
 
 	if err = session.RunContainer(ctx, ContainerConfig{
@@ -117,7 +117,7 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 			),
 		},
 	}); err != nil {
-		return err
+		return newImage, err
 	}
 
 	if err = session.RunContainer(ctx, ContainerConfig{
@@ -135,10 +135,10 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 			),
 		},
 	}); err != nil {
-		return err
+		return newImage, err
 	}
 
-	return session.createImageFromSnapshot(ctx, img, snapshotKey, imagePrefix+recipe.Name+":"+tag)
+	return newImage, session.createImageFromSnapshot(ctx, img, snapshotKey, newImage)
 }
 
 func (session *Session) createSnapshot(ctx context.Context, snapshotKey string, img containerd.Image) error {
@@ -208,7 +208,7 @@ func (session *Session) patchImageConfig(ctx context.Context, ref string, manife
 	return err
 }
 
-func (session *Session) createImageFromSnapshot(ctx context.Context, img containerd.Image, activeSnapshotKey string, newReference string) error {
+func (session *Session) createImageFromSnapshot(ctx context.Context, img containerd.Image, activeSnapshotKey string, newImage reference.ImageRef) error {
 	ctx, done, err := session.client.WithLease(ctx) // Prevent garbage collection while we work.
 	if err != nil {
 		return err
@@ -317,14 +317,14 @@ func (session *Session) createImageFromSnapshot(ctx context.Context, img contain
 	}
 
 	// Let's see if the image exists already, if so, let's delete it
-	_, err = session.client.GetImage(ctx, newReference)
+	_, err = session.client.GetImage(ctx, newImage.FullName())
 	if err == nil {
-		session.client.ImageService().Delete(ctx, newReference, images.SynchronousDelete())
+		session.client.ImageService().Delete(ctx, newImage.FullName(), images.SynchronousDelete())
 	}
 
 	_, err = session.client.ImageService().Create(ctx,
 		images.Image{
-			Name: newReference,
+			Name: newImage.FullName(),
 			Target: ocispec.Descriptor{
 				Digest:    manifestDigest,
 				Size:      int64(len(manifestBytes)),
@@ -337,11 +337,11 @@ func (session *Session) createImageFromSnapshot(ctx context.Context, img contain
 
 	// This will create the required snapshot for the new layer,
 	// which will allow us to run the image immediately.
-	newImage, err := session.client.GetImage(ctx, newReference)
+	imageBuilt, err := session.client.GetImage(ctx, newImage.FullName())
 	if err != nil {
 		return err
 	}
-	err = newImage.Unpack(ctx, containerd.DefaultSnapshotter)
+	err = imageBuilt.Unpack(ctx, containerd.DefaultSnapshotter)
 	if err != nil {
 		return err
 	}
