@@ -44,10 +44,6 @@ var tagCommand = cli.Command{
 		}
 
 		// Run hooks for the newly tagged image.
-		if err != nil {
-			return stagingSession.RunHooksForImage(destinationImageRef)
-		}
-
-		return nil
+		return stagingSession.RunHooksForImage(destinationImageRef)
 	},
 }
