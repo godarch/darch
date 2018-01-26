@@ -11,6 +11,7 @@ var (
 		Usage: "manage images",
 		Subcommands: cli.Commands{
 			pullCommand,
+			pushCommand,
 			listCommand,
 			tagCommand,
 			removeCommand,

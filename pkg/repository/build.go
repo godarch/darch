@@ -55,10 +55,7 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 
 	img, err := session.client.GetImage(ctx, inheritsRef.FullName())
 	if err != nil {
-		// maybe it was because we don't have it? let's try to fetch it
-		if img, err = session.Pull(ctx, inheritsRef.FullName()); err != nil {
-			return newImage, err
-		}
+		return newImage, nil
 	}
 
 	ws, err := workspace.NewWorkspace("/tmp")
