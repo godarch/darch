@@ -3,3 +3,8 @@ set -e
 
 # There shouldn't be any sockets left after running the scripts
 find / -type s -delete
+
+# Remove all the downloaded packages.
+if [ -e /var/cache/pacman/pkg ]; then
+    rm -r /var/cache/pacman/pkg
+fi

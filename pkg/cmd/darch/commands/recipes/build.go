@@ -3,10 +3,10 @@ package recipes
 import (
 	"context"
 	"fmt"
-
 	"github.com/pauldotknopf/darch/pkg/recipes"
 	"github.com/pauldotknopf/darch/pkg/repository"
 	"github.com/urfave/cli"
+	"strings"
 )
 
 var buildCommand = cli.Command{
@@ -15,8 +15,8 @@ var buildCommand = cli.Command{
 	ArgsUsage: "<recipes>",
 	Flags: []cli.Flag{
 		cli.StringFlag{
-			Name:  "tag, t",
-			Usage: "the tag to use when building this recipe",
+			Name:  "tags, t",
+			Usage: "the tag(s) to use when building the recipe",
 			Value: "latest",
 		},
 		cli.StringFlag{
@@ -30,7 +30,7 @@ var buildCommand = cli.Command{
 	},
 	Action: func(clicontext *cli.Context) error {
 		var (
-			tag         = clicontext.String("tag")
+			tags        = clicontext.String("tags")
 			imagePrefix = clicontext.String("image-prefix")
 			recipeNames = clicontext.Args()
 			env         = clicontext.StringSlice("env")
@@ -38,6 +38,11 @@ var buildCommand = cli.Command{
 
 		if len(recipeNames) == 0 {
 			return fmt.Errorf("no recipes provided")
+		}
+
+		defaultTag, additionalTags, err := parseTags(tags)
+		if err != nil {
+			return err
 		}
 
 		allRecipes, err := recipes.GetAllRecipes(getRecipesDir(clicontext))
@@ -60,13 +65,43 @@ var buildCommand = cli.Command{
 		// Now, let's go through each recipe and build it.
 		for _, recipeName := range recipeNames {
 			fmt.Printf("building %s...\n", recipeName)
-			err := session.BuildRecipe(context.Background(), allRecipes[recipeName], tag, imagePrefix, env)
+			image, err := session.BuildRecipe(context.Background(), allRecipes[recipeName], defaultTag, imagePrefix, env)
 			if err != nil {
 				return err
 			}
-			fmt.Printf("built %s\n", recipeName)
+			fmt.Printf("built %s as %s\n", recipeName, image.FullName())
+			// Add additional tags.
+			if len(additionalTags) > 0 {
+				for _, tag := range additionalTags {
+					newImageRef, err := image.WithTag(tag)
+					if err != nil {
+						return err
+					}
+					fmt.Printf("tagging as %s\n", newImageRef.FullName())
+					err = session.TagImage(context.Background(), image, newImageRef)
+					if err != nil {
+						return err
+					}
+				}
+			}
 		}
 
 		return err
 	},
+}
+
+func parseTags(tags string) (string, []string, error) {
+	if len(tags) == 0 {
+		return "", nil, fmt.Errorf("invalid tag")
+	}
+
+	split := strings.Split(tags, ",")
+
+	for _, tag := range split {
+		if len(tag) == 0 {
+			return "", nil, fmt.Errorf("invalid tag")
+		}
+	}
+
+	return split[0], split[1:], nil
 }

@@ -42,20 +42,10 @@ func (session *Session) GetImages(ctx context.Context) ([]Image, error) {
 }
 
 // TagImage Tag an image.
-func (session *Session) TagImage(ctx context.Context, source, destination string) error {
+func (session *Session) TagImage(ctx context.Context, source, destination reference.ImageRef) error {
 	ctx = namespaces.WithNamespace(ctx, "darch")
 
-	sourceRef, err := reference.ParseImage(source)
-	if err != nil {
-		return err
-	}
-
-	destinationRef, err := reference.ParseImage(destination)
-	if err != nil {
-		return err
-	}
-
-	sourceImage, err := session.client.GetImage(ctx, sourceRef.FullName())
+	sourceImage, err := session.client.GetImage(ctx, source.FullName())
 	if err != nil {
 		return err
 	}
@@ -64,7 +54,7 @@ func (session *Session) TagImage(ctx context.Context, source, destination string
 
 	_, err = session.client.ImageService().Create(ctx,
 		images.Image{
-			Name:   destinationRef.FullName(),
+			Name:   destination.FullName(),
 			Target: sourceImageTarget,
 		})
 	if err != nil {
