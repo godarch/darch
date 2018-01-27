@@ -45,9 +45,7 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 	// External references are expected to be fully qualified.
 	inherits := recipe.Inherits
 	if !recipe.InheritsExternal {
-		fmt.Printf("Not going external: %s\n", inherits)
 		inherits = imagePrefix + inherits
-		fmt.Println("--" + inherits)
 	}
 
 	// NOTE: We use ParseImageWithDefaultTag here.
@@ -80,6 +78,13 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 		Source:      recipe.RecipesDir,
 		Options:     []string{"rbind", "ro"},
 	})
+
+	// Prevent garbage collection while we work.
+	ctx, done, err := session.client.WithLease(ctx)
+	if err != nil {
+		return newImage, err
+	}
+	defer done()
 
 	// Let's create the snapshot that all of our containers will run off of
 	snapshotKey := utils.NewID()
@@ -214,12 +219,6 @@ func (session *Session) patchImageConfig(ctx context.Context, ref string, manife
 }
 
 func (session *Session) createImageFromSnapshot(ctx context.Context, img containerd.Image, activeSnapshotKey string, newImage reference.ImageRef) error {
-	ctx, done, err := session.client.WithLease(ctx) // Prevent garbage collection while we work.
-	if err != nil {
-		return err
-	}
-	defer done()
-
 	contentStore := session.client.ContentStore()
 	snapshotService := session.client.SnapshotService(containerd.DefaultSnapshotter)
 	imgTarget := img.Target()
