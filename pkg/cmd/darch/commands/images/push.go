@@ -10,9 +10,9 @@ import (
 	"github.com/urfave/cli"
 )
 
-var pullCommand = cli.Command{
-	Name:      "pull",
-	Usage:     "pull an image from a remote registry",
+var pushCommand = cli.Command{
+	Name:      "push",
+	Usage:     "push an image to a remote registry",
 	ArgsUsage: "[flags] <image>",
 	Flags:     commands.RegistryFlags,
 	Action: func(clicontext *cli.Context) error {
@@ -36,14 +36,14 @@ var pullCommand = cli.Command{
 		}
 		defer repo.Close()
 
-		fmt.Printf("pulling %s\n", imageRef.FullName())
+		fmt.Printf("pushing %s\n", imageRef.FullName())
 
-		err = repo.Pull(ctx.Background(), imageRef, resolver)
+		err = repo.Push(ctx.Background(), imageRef, resolver)
 		if err != nil {
 			return err
 		}
 
-		fmt.Printf("pulled %s\n", imageRef.FullName())
+		fmt.Printf("pushed %s\n", imageRef.FullName())
 
 		return nil
 	},

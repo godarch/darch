@@ -15,6 +15,11 @@ type ImageRef struct {
 
 // ParseImage Parses a string for image:tag.
 func ParseImage(val string) (ImageRef, error) {
+	return ParseImageWithDefaultTag(val, "latest")
+}
+
+// ParseImageWithDefaultTag Parse an image name. If not tag is given in the image name, use the optionalTag as the tag.
+func ParseImageWithDefaultTag(val, optionalTag string) (ImageRef, error) {
 	if len(val) == 0 {
 		return ImageRef{}, fmt.Errorf("no image name provided")
 	}
@@ -37,12 +42,21 @@ func ParseImage(val string) (ImageRef, error) {
 	}
 
 	if len(result.Tag) == 0 {
-		result.Tag = "latest"
+		result.Tag = optionalTag
 	}
 	if len(result.Name) == 0 {
 		return result, fmt.Errorf("invalid format")
 	}
 	return result, nil
+}
+
+// WithTag Changes the tag of a image reference.
+func (image ImageRef) WithTag(tag string) (ImageRef, error) {
+	if len(tag) == 0 {
+		return image, fmt.Errorf("tag required")
+	}
+	image.Tag = tag
+	return image, nil
 }
 
 // FullName Returns image:tag for the image reference.
