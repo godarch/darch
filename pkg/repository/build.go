@@ -1,9 +1,7 @@
 package repository
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"runtime"
 
@@ -11,21 +9,18 @@ import (
 
 	"github.com/containerd/containerd"
 
-	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/diff"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/oci"
-	digest "github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/pauldotknopf/darch/pkg/recipes"
 	"github.com/pauldotknopf/darch/pkg/reference"
+	"github.com/pauldotknopf/darch/pkg/repository/manifest"
 	"github.com/pauldotknopf/darch/pkg/utils"
 	"github.com/pauldotknopf/darch/pkg/workspace"
 )
-
-const containerdUncompressed = "containerd.io/uncompressed"
 
 // BuildRecipe Builds a recipe.
 func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, tag string, imagePrefix string, env []string) (reference.ImageRef, error) {
@@ -167,88 +162,29 @@ func (session *Session) deleteSnapshot(ctx context.Context, snapshotKey string) 
 	return session.client.SnapshotService(containerd.DefaultSnapshotter).Remove(ctx, snapshotKey)
 }
 
-func (session *Session) patchImageConfig(ctx context.Context, ref string, manifest *ocispec.Manifest, newLayerDigest digest.Digest) error {
-	// Get the current image configuration.
-	p, err := content.ReadBlob(ctx, session.client.ContentStore(), manifest.Config.Digest)
-	if err != nil {
-		return err
-	}
-
-	// Deserialize the image configuration to a generic json object.
-	// We do this so that we can patch it, without requiring knowledge
-	// of the entire schema.
-	m := map[string]json.RawMessage{}
-	if err = json.Unmarshal(p, &m); err != nil {
-		return err
-	}
-
-	// Pull the rootfs section out, so that we can append a layer to the diff_ids array.
-	var rootFS ocispec.RootFS
-	p, err = m["rootfs"].MarshalJSON()
-	if err != nil {
-		return err
-	}
-	if err = json.Unmarshal(p, &rootFS); err != nil {
-		return err
-	}
-	rootFS.DiffIDs = append(rootFS.DiffIDs, newLayerDigest)
-	p, err = json.Marshal(rootFS)
-	if err != nil {
-		return err
-	}
-	m["rootfs"] = p
-
-	// Convert our entire image configuration back to bytes, and write it to the content store.
-	p, err = json.Marshal(m)
-	if err != nil {
-		return err
-	}
-	manifest.Config.Digest = digest.FromBytes(p)
-	manifest.Config.Size = int64(len(p))
-	err = content.WriteBlob(ctx, session.client.ContentStore(),
-		ref,
-		bytes.NewReader(p),
-		manifest.Config.Size,
-		manifest.Config.Digest,
-	)
-	if err != nil {
-		return err
-	}
-
-	return err
-}
-
 func (session *Session) createImageFromSnapshot(ctx context.Context, img containerd.Image, activeSnapshotKey string, newImage reference.ImageRef) error {
-	contentStore := session.client.ContentStore()
-	snapshotService := session.client.SnapshotService(containerd.DefaultSnapshotter)
-	imgTarget := img.Target()
-
-	// First, let's get the parent image digest, so that we can
+	// First, let's get the parent image manifest so that we can
 	// later create a new one from it, with a new layer added to it.
-	p, err := content.ReadBlob(ctx, contentStore, imgTarget.Digest)
-	if err != nil {
-		return err
-	}
-	var manifest ocispec.Manifest
-	if err := json.Unmarshal(p, &manifest); err != nil {
-		return err
-	}
-
-	snapshot, err := snapshotService.Stat(ctx, activeSnapshotKey)
+	m, err := manifest.LoadManifest(ctx, session.content, img.Target())
 	if err != nil {
 		return err
 	}
 
-	upperMounts, err := snapshotService.Mounts(ctx, activeSnapshotKey)
+	snapshot, err := session.snapshotter.Stat(ctx, activeSnapshotKey)
 	if err != nil {
 		return err
 	}
 
-	lowerMounts, err := snapshotService.View(ctx, "temp-readonly-parent", snapshot.Parent)
+	upperMounts, err := session.snapshotter.Mounts(ctx, activeSnapshotKey)
 	if err != nil {
 		return err
 	}
-	defer snapshotService.Remove(ctx, "temp-readonly-parent")
+
+	lowerMounts, err := session.snapshotter.View(ctx, "temp-readonly-parent", snapshot.Parent)
+	if err != nil {
+		return err
+	}
+	defer session.snapshotter.Remove(ctx, "temp-readonly-parent")
 
 	// Generate a diff in content store
 	diffs, err := session.client.DiffService().DiffMounts(ctx,
@@ -260,65 +196,8 @@ func (session *Session) createImageFromSnapshot(ctx context.Context, img contain
 		return err
 	}
 
-	// These builds can be done on docker images, or OCI image.
-	// Let's make sure the new layer uses the same content type as the manifest expects.
-	switch imgTarget.MediaType {
-	case images.MediaTypeDockerSchema2Manifest:
-		diffs.MediaType = images.MediaTypeDockerSchema2LayerGzip
-		break
-	case ocispec.MediaTypeImageManifest:
-		diffs.MediaType = ocispec.MediaTypeImageLayerGzip
-		break
-	default:
-		return fmt.Errorf("unknown parent image manifest type: %s", imgTarget.MediaType)
-	}
-
 	// Add our new layer to the image manifest
-	manifest.Layers = append(manifest.Layers, diffs)
-
-	// Add the blob checksum to image config
-	info, err := contentStore.Info(ctx, diffs.Digest)
-	if err != nil {
-		return err
-	}
-	diffIDStr, ok := info.Labels[containerdUncompressed]
-	if !ok {
-		return fmt.Errorf("invalid differ response with no diffID")
-	}
-	diffIDDigest, err := digest.Parse(diffIDStr)
-	if err != nil {
-		return err
-	}
-	err = session.patchImageConfig(ctx, "custom-ref", &manifest, diffIDDigest)
-	if err != nil {
-		return err
-	}
-
-	// Prepare the labels that will tell the garbage collector
-	// to NOT delete the content this manifest references.
-	labels := map[string]string{
-		"containerd.io/gc.ref.content.0": manifest.Config.Digest.String(),
-	}
-	for i, layer := range manifest.Layers {
-		labels[fmt.Sprintf("containerd.io/gc.ref.content.%d", i+1)] = layer.Digest.String()
-	}
-
-	// Save our new image manifest, which now hows our new layer,
-	// and a patched image config with a reference to the new layer.
-	manifestBytes, err := json.Marshal(manifest)
-	if err != nil {
-		return err
-	}
-	manifestDigest := digest.FromBytes(manifestBytes)
-	if err := content.WriteBlob(ctx,
-		contentStore,
-		"custom-ref",
-		bytes.NewReader(manifestBytes),
-		int64(len(manifestBytes)),
-		manifestDigest,
-		content.WithLabels(labels)); err != nil {
-		return err
-	}
+	err = m.AddLayer(ctx, session.content, diffs)
 
 	// Let's see if the image exists already, if so, let's delete it
 	_, err = session.client.GetImage(ctx, newImage.FullName())
@@ -330,9 +209,9 @@ func (session *Session) createImageFromSnapshot(ctx context.Context, img contain
 		images.Image{
 			Name: newImage.FullName(),
 			Target: ocispec.Descriptor{
-				Digest:    manifestDigest,
-				Size:      int64(len(manifestBytes)),
-				MediaType: imgTarget.MediaType, /*use same one as inherited image*/
+				Digest:    m.Descriptor().Digest,
+				Size:      m.Descriptor().Size,
+				MediaType: m.Descriptor().MediaType,
 			},
 		})
 	if err != nil {
