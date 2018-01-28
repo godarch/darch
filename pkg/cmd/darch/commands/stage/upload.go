@@ -3,6 +3,7 @@ package stage
 import (
 	"context"
 
+	"github.com/pauldotknopf/darch/pkg/cmd/darch/commands"
 	"github.com/pauldotknopf/darch/pkg/reference"
 	"github.com/pauldotknopf/darch/pkg/repository"
 	"github.com/pauldotknopf/darch/pkg/staging"
@@ -26,7 +27,7 @@ var uploadCommand = cli.Command{
 			force     = clicontext.Bool("force")
 		)
 
-		err := checkForRoot()
+		err := commands.CheckForRoot()
 		if err != nil {
 			return err
 		}
@@ -65,6 +66,11 @@ var uploadCommand = cli.Command{
 		ws.MarkDestroyed() // prevent defered Destroy() from working, since we moved the directory to where it should be.
 
 		// Run hooks for the new image.
-		return stagingSession.RunHooksForImage(imageRef)
+		err = stagingSession.RunHooksForImage(imageRef)
+		if err != nil {
+			return err
+		}
+
+		return stagingSession.SyncBootloader()
 	},
 }

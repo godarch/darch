@@ -4,9 +4,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/pauldotknopf/darch/pkg/reference"
+	"github.com/pkg/errors"
 )
 
 // Image An image fetched from the repository.
@@ -50,12 +52,29 @@ func (session *Session) TagImage(ctx context.Context, source, destination refere
 		return err
 	}
 
-	sourceImageTarget := sourceImage.Target()
+	// Prevent garbage collection while we work.
+	ctx, done, err := session.client.WithLease(ctx)
+	if err != nil {
+		return err
+	}
+	defer done()
+
+	// Make sure the destination image:tag doesn't already exist.
+	destinationImage, err := session.client.GetImage(ctx, destination.FullName())
+	if err != nil && errors.Cause(err) != errdefs.ErrNotFound {
+		return err
+	}
+	if err == nil {
+		err = session.imagesStore.Delete(ctx, destinationImage.Name(), images.SynchronousDelete())
+		if err != nil {
+			return err
+		}
+	}
 
 	_, err = session.client.ImageService().Create(ctx,
 		images.Image{
 			Name:   destination.FullName(),
-			Target: sourceImageTarget,
+			Target: sourceImage.Target(),
 		})
 	if err != nil {
 		return err

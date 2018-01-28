@@ -1,18 +1,17 @@
-package stage
+package grub
 
 import (
-	"fmt"
-
+	"github.com/pauldotknopf/darch/pkg/cmd/darch/commands"
 	"github.com/pauldotknopf/darch/pkg/staging"
 	"github.com/urfave/cli"
+	"os"
 )
 
-var grubCommand = cli.Command{
-	Name:   "grub",
-	Usage:  "helper command for generating grub.cfd",
-	Hidden: true,
+var grubMenuEntriesCommand = cli.Command{
+	Name:        "menu-entries",
+	Description: "outut a menu entries for each staged image",
 	Action: func(clicontext *cli.Context) error {
-		err := checkForRoot()
+		err := commands.CheckForRoot()
 		if err != nil {
 			return err
 		}
@@ -28,8 +27,12 @@ var grubCommand = cli.Command{
 		}
 
 		for _, stagedImage := range stagedImages {
-			fmt.Printf("%s %s %s %s %s %s\n", stagedImage.Ref.Name, stagedImage.Ref.Tag, stagedImage.Dir, stagedImage.Kernel, stagedImage.InitRAMFS, stagedImage.RootFS)
+			err = session.PrintGrubMenuEntry(stagedImage, os.Stdout)
+			if err != nil {
+				return err
+			}
 		}
+
 		return nil
 	},
 }
