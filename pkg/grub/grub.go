@@ -94,7 +94,7 @@ func MenuEntry(name string, contents func(w io.Writer) error, output io.Writer) 
 	if err != nil {
 		return err
 	}
-	_, err = io.WriteString(output, "}")
+	_, err = io.WriteString(output, "}\n")
 	if err != nil {
 		return err
 	}

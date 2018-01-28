@@ -11,7 +11,8 @@ var (
 		Usage:  "grub helpers for the stage",
 		Hidden: true,
 		Subcommands: cli.Commands{
-			grubEntryCommand,
+			grubMenuEntryCommand,
+			grubConfigEntryCommand,
 		},
 	}
 )
