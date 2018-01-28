@@ -1,9 +1,7 @@
 package stage
 
 import (
-	"fmt"
-	"os/user"
-
+	"github.com/pauldotknopf/darch/pkg/cmd/darch/commands/stage/grub"
 	"github.com/urfave/cli"
 )
 
@@ -18,18 +16,7 @@ var (
 			removeCommand,
 			tagCommand,
 			runHooksCommand,
-			grubCommand,
+			grub.Command,
 		},
 	}
 )
-
-func checkForRoot() error {
-	current, err := user.Current()
-	if err != nil {
-		return err
-	}
-	if current.Uid != "0" {
-		return fmt.Errorf("you must be root")
-	}
-	return nil
-}

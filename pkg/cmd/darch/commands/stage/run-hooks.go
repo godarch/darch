@@ -1,6 +1,7 @@
 package stage
 
 import (
+	"github.com/pauldotknopf/darch/pkg/cmd/darch/commands"
 	"github.com/pauldotknopf/darch/pkg/reference"
 	"github.com/pauldotknopf/darch/pkg/staging"
 	"github.com/urfave/cli"
@@ -15,7 +16,7 @@ var runHooksCommand = cli.Command{
 			imageName = clicontext.Args().First()
 		)
 
-		err := checkForRoot()
+		err := commands.CheckForRoot()
 		if err != nil {
 			return err
 		}

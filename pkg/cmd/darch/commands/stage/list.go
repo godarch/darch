@@ -3,6 +3,7 @@ package stage
 import (
 	"fmt"
 
+	"github.com/pauldotknopf/darch/pkg/cmd/darch/commands"
 	"github.com/pauldotknopf/darch/pkg/staging"
 	"github.com/urfave/cli"
 )
@@ -11,7 +12,7 @@ var listCommand = cli.Command{
 	Name:  "list",
 	Usage: "list all staged images",
 	Action: func(clicontext *cli.Context) error {
-		err := checkForRoot()
+		err := commands.CheckForRoot()
 		if err != nil {
 			return err
 		}
