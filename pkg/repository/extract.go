@@ -42,13 +42,6 @@ func (session *Session) ExtractImage(ctx context.Context, imageRef reference.Ima
 
 	mounts, err := createTempMounts(tempMountsWs.Path)
 
-	mounts = append(mounts, specs.Mount{
-		Source:      "/home/pknopf/git/darch/src/github.com/pauldotknopf/darch/rootfs/helpers/darch-extract",
-		Destination: "/darch-extract",
-		Type:        "bind",
-		Options:     []string{"rbind", "rw"},
-	})
-
 	// Create the snapshot that our extraction will happen on.
 	snapshotKey := utils.NewID()
 	err = session.createSnapshot(ctx, snapshotKey, img)
