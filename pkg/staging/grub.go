@@ -1,12 +1,20 @@
 package staging
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
+	"github.com/docker/docker/pkg/ioutils"
 	"github.com/pauldotknopf/darch/pkg/block"
 	"github.com/pauldotknopf/darch/pkg/grub"
 	"io"
 	"os"
 	"path"
+)
+
+var (
+	// DefaultGrubConfigPath The location where the grub.cfg for darch is stored.
+	DefaultGrubConfigPath = "/etc/darch/grub.cfg"
 )
 
 // PrintGrubMenuEntry Print the grub entry for the given staged image.
@@ -38,5 +46,30 @@ func (session *Session) PrintGrubMenuEntry(stagedImage StagedImageNamed, output 
 			return err
 		}
 		return nil
-	}, os.Stdout)
+	}, output)
+}
+
+// SyncBootloader Updates the /etc/darch/grub.cfg to represent the current stage.
+func (session *Session) SyncBootloader() error {
+	allImages, err := session.GetAllStaged()
+	if err != nil {
+		return err
+	}
+
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+
+	for _, image := range allImages {
+		err = session.PrintGrubMenuEntry(image, w)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = w.Flush()
+	if err != nil {
+		return err
+	}
+
+	return ioutils.AtomicWriteFile(DefaultGrubConfigPath, b.Bytes(), os.ModePerm)
 }
