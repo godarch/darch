@@ -2,6 +2,7 @@ package repository
 
 import (
 	"github.com/containerd/containerd"
+	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/diff"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/snapshots"
@@ -18,6 +19,7 @@ type Session struct {
 	snapshotter snapshots.Snapshotter
 	imagesStore images.Store
 	differ      diff.Differ
+	content     content.Store
 }
 
 // NewSession creates a new session
@@ -34,6 +36,7 @@ func NewSession(containerdSocket string) (*Session, error) {
 		snapshotter: client.SnapshotService(containerd.DefaultSnapshotter),
 		imagesStore: client.ImageService(),
 		differ:      client.DiffService(),
+		content:     client.ContentStore(),
 	}, nil
 }
 
