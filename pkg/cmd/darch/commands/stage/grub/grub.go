@@ -13,6 +13,7 @@ var (
 		Subcommands: cli.Commands{
 			grubMenuEntryCommand,
 			grubConfigEntryCommand,
+			grubMenuEntriesCommand,
 		},
 	}
 )

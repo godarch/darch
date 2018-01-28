@@ -11,7 +11,7 @@ import (
 
 var grubMenuEntryCommand = cli.Command{
 	Name:        "menu-entry",
-	Description: "outut a menu entry for a staged item",
+	Description: "output a menu entry for a staged item",
 	ArgsUsage:   "<image[:tag]>",
 	Action: func(clicontext *cli.Context) error {
 		var (
