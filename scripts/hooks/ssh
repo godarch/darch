@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+set -e
+
+help() {
+    echo "Creates a set of shared ssh fingerprints to be applied to each image."
+}
+
+install() {
+
+    # Let's generate our ssh keys
+    # TODO: Currently, this just copies host
+    # keys to configuration directory.
+    # We should actually generate new ssh keys.
+    if [ ! -e /etc/darch/ssh/default ]; then
+        mkdir -p /etc/darch/ssh/default
+        cp /etc/ssh/ssh_host_* /etc/darch/ssh/default
+    fi
+
+    cp /etc/darch/ssh/default/ssh_host_* .
+}
+
+run() {
+    # Create the SSH directory, if it doesn't exist.
+    if [ ! -e $DARCH_ROOT_FS/etc/ssh ]; then
+        mkdir -p "$DARCH_ROOT_FS/etc/ssh"
+    fi
+    # Copy over all of our SSH keys.
+    cp ssh_host_* $DARCH_ROOT_FS/etc/ssh
+}

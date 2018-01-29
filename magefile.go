@@ -119,6 +119,11 @@ func Bundle() error {
 		return err
 	}
 
+	fmt.Println("placing bundle/etc/darch/hooks/ssh/hook")
+	if err := copyFile("scripts/hooks/ssh", "bundle/etc/darch/hooks/ssh/hook"); err != nil {
+		return err
+	}
+
 	fmt.Println("placing bundle/etc/grub.d/60_darch")
 	if err := copyFile("scripts/grub-mkconfig-script", "bundle/etc/grub.d/60_darch"); err != nil {
 		return err
@@ -159,6 +164,11 @@ func Install() error {
 
 	fmt.Println("placing /etc/darch/hooks/hostname/hook")
 	if err := copyFile("scripts/hooks/hostname", "/etc/darch/hooks/hostname/hook"); err != nil {
+		return err
+	}
+
+	fmt.Println("placing /etc/darch/hooks/ssh/hook")
+	if err := copyFile("scripts/hooks/ssh", "/etc/darch/hooks/ssh/hook"); err != nil {
 		return err
 	}
 
