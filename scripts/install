@@ -18,7 +18,12 @@ fi
 echo "Installing tag: $DARCH_TAG"
 
 echo "Downloading and extracting..."
-wget -O- -q https://github.com/pauldotknopf/darch/releases/download/$DARCH_TAG/darch-amd64.tar.gz | tar xpz -C /
+DARCH_FILE="darch-amd64.tar.gz"
+if [ "$DARCH_WITH_RUNTIME" == "yes" ]; then
+    echo "Using Darch with bundled containerd and runc..."
+    DARCH_FILE="darch-amd64-with-runtime.tar.gz"
+fi
+wget -O- -q https://github.com/pauldotknopf/darch/releases/download/$DARCH_TAG/$DARCH_FILE | tar xpz -C /
 
 echo "Verifying installation..."
 darch version
