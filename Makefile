@@ -100,12 +100,7 @@ ifeq ($(BUNDLE_RUNTIME), yes)
 	@github-release upload --user pauldotknopf --repo darch --tag $(TAG) --name $(DESTINATION_BUNDLE_FILE_NAME_WITH_RUNTIME) --file output/$(DESTINATION_BUNDLE_FILE_NAME_WITH_RUNTIME)
 endif
 	@echo "updating aur"
-	@echo "---"
-	@echo $(VERSION)
-	@echo $(TAG)
-	@echo $(TRAVIS_TAG)
-	@echo "---"
-	. ./scripts/aur/deploy-aur $(VERSION)
+	scripts/aur/deploy-aur $(VERSION)
 else
 	@echo "not a tagged build, skipping release"
 endif
