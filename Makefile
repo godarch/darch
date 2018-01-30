@@ -32,8 +32,9 @@ bundle_containerd: clean_containerd
 	@mkdir -p tmp/containerd/github.com/containerd
 	@git clone https://github.com/containerd/containerd tmp/containerd/src/github.com/containerd/containerd
 	@cd tmp/containerd/src/github.com/containerd/containerd && git checkout $(CONTAINERD_COMMIT)
-	@GOPATH=$(CURRENTDIR)/tmp/containerd && cd $(CURRENTDIR)/tmp/containerd/src/github.com/containerd/containerd && make && make install DESTDIR=$(CURRENTDIR)/bundle
-	@sed -i "s|/usr/local/bin/containerd|/bin/containerd|" tmp/containerd/src/github.com/containerd/containerd/containerd.service
+	@GOPATH=$(CURRENTDIR)/tmp/containerd && cd $(CURRENTDIR)/tmp/containerd/src/github.com/containerd/containerd && make && make install DESTDIR=$(CURRENTDIR)/bundle/usr/
+	@sed -i "s|/usr/local/bin/containerd|/usr/bin/containerd|" tmp/containerd/src/github.com/containerd/containerd/containerd.service
+	@sed -i "s|/sbin/modprobe|/usr/bin/env modprobe|" tmp/containerd/src/github.com/containerd/containerd/containerd.service
 	@install -Dm644 tmp/containerd/src/github.com/containerd/containerd/containerd.service bundle/usr/lib/systemd/system/containerd.service
 clean_runc:
 	@echo "cleaning tmp/runc"
@@ -43,7 +44,7 @@ bundle_runc: clean_runc
 	@mkdir -p tmp/runc/github.com/opencontainers
 	@git clone https://github.com/opencontainers/runc tmp/runc/src/github.com/opencontainers/runc
 	@cd tmp/runc/src/github.com/opencontainers/runc && git checkout $(RUNC_COMMIT)
-	@GOPATH=$(CURRENTDIR)/tmp/runc && cd $(CURRENTDIR)/tmp/runc/src/github.com/opencontainers/runc && make && make install PREFIX=$(CURRENTDIR)/bundle
+	@GOPATH=$(CURRENTDIR)/tmp/runc && cd $(CURRENTDIR)/tmp/runc/src/github.com/opencontainers/runc && make && make install BINDIR=$(CURRENTDIR)/bundle/usr/bin
 test:
 	@echo "testing"
 	@go test ./pkg/...
