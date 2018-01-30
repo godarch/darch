@@ -2,7 +2,7 @@ FROM scratch
 
 ADD root.x86_64 /
 
-# # Add our cpio hooks to be used when building the image
+# # Add our cpio hooks to be used when building the image.
 # TODO: Make this an AUR package? or a pkg.tar.gz?
 RUN mkdir -p /etc/mkinitcpio.d/
 ADD /initcpio-hooks/darch.preset /etc/mkinitcpio.d/linux.preset
@@ -18,5 +18,10 @@ ADD helpers/darch-runrecipe /
 ADD helpers/darch-teardown /
 ADD helpers/darch-extract /
 
-# Let's just add a default/good mirror to begin with
+# Let's just add a default/good mirror to begin with.
 RUN echo "Server = https://arch.mirror.square-r00t.net/\$repo/os/\$arch" >> /etc/pacman.d/mirrorlist
+
+# The bootstrap may have outdated packages, update everything.
+RUN pacman-key --init && pacman-key --populate archlinux
+RUN pacman -Syu --noconfirm
+RUN rm -r /var/cache/pacman/pkg
