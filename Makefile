@@ -97,10 +97,15 @@ ifdef TRAVIS_TAG
 	@github-release upload --user pauldotknopf --repo darch --tag $(TAG) --name $(DESTINATION_BUNDLE_FILE_NAME) --file output/$(DESTINATION_BUNDLE_FILE_NAME)
 ifeq ($(BUNDLE_RUNTIME), yes)
 	@echo "uploading $(DESTINATION_BUNDLE_FILE_NAME_WITH_RUNTIME)"
-	@github-release upload --user pauldotknopf --repo darch --tag $(TAG) --name $(DESTINATION_BUNDLE_FILE_NAME_WITH_RUNTIME) --file output/$(DESTINATION_BUNDLE_FILE_NAME)
+	@github-release upload --user pauldotknopf --repo darch --tag $(TAG) --name $(DESTINATION_BUNDLE_FILE_NAME_WITH_RUNTIME) --file output/$(DESTINATION_BUNDLE_FILE_NAME_WITH_RUNTIME)
 endif
 	@echo "updating aur"
-	@. ./scripts/aur/deploy-aur $(VERSION)
+	@echo "---"
+	@echo $(VERSION)
+	@echo $(TAG)
+	@echo $(TRAVIS_TAG)
+	@echo "---"
+	. ./scripts/aur/deploy-aur $(VERSION)
 else
 	@echo "not a tagged build, skipping release"
 endif
