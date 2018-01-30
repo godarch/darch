@@ -5,3 +5,5 @@ bin/
 scripts/aur/arch.key
 scripts/aur/PKGBUILD
 scripts/aur/aur/
+tmp/
+output/

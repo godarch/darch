@@ -24,6 +24,5 @@ run() {
     if [ ! -e $DARCH_ROOT_FS/etc/ssh ]; then
         mkdir -p "$DARCH_ROOT_FS/etc/ssh"
     fi
-    # Copy over all of our SSH keys.
-    cp ssh_host_* $DARCH_ROOT_FS/etc/ssh
+    cp $DARCH_HOOK_DIR/ssh_host_* $DARCH_ROOT_FS/etc/ssh
 }
