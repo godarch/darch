@@ -1,0 +1,4 @@
+baseURL = "http://darch.pknopf.com/"
+languageCode = "en-us"
+title = "Darch"
+theme = "hugo-theme-learn"
