@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/pauldotknopf/darch/pkg/utils"
+	"github.com/godarch/darch/pkg/utils"
 )
 
 // Workspace The workspace.

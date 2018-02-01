@@ -8,7 +8,7 @@ fi
 
 
 if [ -z "$DARCH_TAG" ]; then
-    DARCH_TAG=`curl https://api.github.com/repos/pauldotknopf/darch/releases/latest -s | jq .tag_name -r`
+    DARCH_TAG=`curl https://api.github.com/repos/godarch/darch/releases/latest -s | jq .tag_name -r`
     if [ -z "$DARCH_TAG" ]; then
         echo Could not get the latest tag from GitHub.
         exit 1
@@ -23,7 +23,7 @@ if [ "$DARCH_WITH_RUNTIME" == "yes" ]; then
     echo "Using Darch with bundled containerd and runc..."
     DARCH_FILE="darch-amd64-with-runtime.tar.gz"
 fi
-wget -O- -q https://github.com/pauldotknopf/darch/releases/download/$DARCH_TAG/$DARCH_FILE | tar xpz -C /
+wget -O- -q https://github.com/godarch/darch/releases/download/$DARCH_TAG/$DARCH_FILE | tar xpz -C /
 
 echo "Verifying installation..."
 darch version

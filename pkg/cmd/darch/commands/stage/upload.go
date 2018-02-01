@@ -3,11 +3,11 @@ package stage
 import (
 	"context"
 
-	"github.com/pauldotknopf/darch/pkg/cmd/darch/commands"
-	"github.com/pauldotknopf/darch/pkg/reference"
-	"github.com/pauldotknopf/darch/pkg/repository"
-	"github.com/pauldotknopf/darch/pkg/staging"
-	"github.com/pauldotknopf/darch/pkg/workspace"
+	"github.com/godarch/darch/pkg/cmd/darch/commands"
+	"github.com/godarch/darch/pkg/reference"
+	"github.com/godarch/darch/pkg/repository"
+	"github.com/godarch/darch/pkg/staging"
+	"github.com/godarch/darch/pkg/workspace"
 	"github.com/urfave/cli"
 )
 

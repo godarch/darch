@@ -3,8 +3,8 @@ package recipes
 import (
 	"context"
 	"fmt"
-	"github.com/pauldotknopf/darch/pkg/recipes"
-	"github.com/pauldotknopf/darch/pkg/repository"
+	"github.com/godarch/darch/pkg/recipes"
+	"github.com/godarch/darch/pkg/repository"
 	"github.com/urfave/cli"
 	"strings"
 )

@@ -1,6 +1,6 @@
 package staging
 
-import "github.com/pauldotknopf/darch/pkg/reference"
+import "github.com/godarch/darch/pkg/reference"
 
 // Tag Tag a staged image as something else.
 func (session *Session) Tag(sourceImageRef, destinationImageRef reference.ImageRef, force bool) error {

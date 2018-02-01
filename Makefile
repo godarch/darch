@@ -93,12 +93,12 @@ install: bundle
 release:
 ifdef TRAVIS_TAG
 	@echo "creating github release"
-	@github-release release --user pauldotknopf --repo darch --tag $(TAG)
+	@github-release release --user godarch --repo darch --tag $(TAG)
 	@echo "uploading $(DESTINATION_BUNDLE_FILE_NAME)"
-	@github-release upload --user pauldotknopf --repo darch --tag $(TAG) --name $(DESTINATION_BUNDLE_FILE_NAME) --file output/$(DESTINATION_BUNDLE_FILE_NAME)
+	@github-release upload --user godarch --repo darch --tag $(TAG) --name $(DESTINATION_BUNDLE_FILE_NAME) --file output/$(DESTINATION_BUNDLE_FILE_NAME)
 ifeq ($(BUNDLE_RUNTIME), yes)
 	@echo "uploading $(DESTINATION_BUNDLE_FILE_NAME_WITH_RUNTIME)"
-	@github-release upload --user pauldotknopf --repo darch --tag $(TAG) --name $(DESTINATION_BUNDLE_FILE_NAME_WITH_RUNTIME) --file output/$(DESTINATION_BUNDLE_FILE_NAME_WITH_RUNTIME)
+	@github-release upload --user godarch --repo darch --tag $(TAG) --name $(DESTINATION_BUNDLE_FILE_NAME_WITH_RUNTIME) --file output/$(DESTINATION_BUNDLE_FILE_NAME_WITH_RUNTIME)
 endif
 	@echo "updating aur"
 	scripts/aur/deploy-aur $(VERSION)

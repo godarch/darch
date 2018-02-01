@@ -7,7 +7,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/pauldotknopf/darch/pkg/utils"
+	"github.com/godarch/darch/pkg/utils"
 )
 
 type recipeConfiguration struct {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/pauldotknopf/darch/pkg/reference"
-	"github.com/pauldotknopf/darch/pkg/repository"
+	"github.com/godarch/darch/pkg/reference"
+	"github.com/godarch/darch/pkg/repository"
 	"github.com/urfave/cli"
 )
 

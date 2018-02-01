@@ -2,9 +2,9 @@ package grub
 
 import (
 	"fmt"
-	"github.com/pauldotknopf/darch/pkg/block"
-	"github.com/pauldotknopf/darch/pkg/cmd/darch/commands"
-	"github.com/pauldotknopf/darch/pkg/grub"
+	"github.com/godarch/darch/pkg/block"
+	"github.com/godarch/darch/pkg/cmd/darch/commands"
+	"github.com/godarch/darch/pkg/grub"
 	"github.com/urfave/cli"
 	"io"
 	"os"

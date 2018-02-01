@@ -5,7 +5,7 @@ import (
 	"path"
 	"testing"
 
-	"github.com/pauldotknopf/darch/pkg/utils"
+	"github.com/godarch/darch/pkg/utils"
 )
 
 func TestCreatesOnNew(t *testing.T) {

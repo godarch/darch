@@ -8,8 +8,8 @@ import (
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/cmd/ctr/commands"
 	"github.com/containerd/containerd/namespaces"
+	"github.com/godarch/darch/pkg/utils"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/pauldotknopf/darch/pkg/utils"
 	"github.com/urfave/cli"
 )
 

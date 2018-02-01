@@ -5,7 +5,7 @@ import (
 	"log"
 	"sort"
 
-	"github.com/pauldotknopf/darch/pkg/recipes"
+	"github.com/godarch/darch/pkg/recipes"
 	"github.com/urfave/cli"
 )
 

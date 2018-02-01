@@ -4,9 +4,9 @@ import (
 	ctx "context"
 	"fmt"
 
-	"github.com/pauldotknopf/darch/pkg/cmd/darch/commands"
-	"github.com/pauldotknopf/darch/pkg/reference"
-	"github.com/pauldotknopf/darch/pkg/repository"
+	"github.com/godarch/darch/pkg/cmd/darch/commands"
+	"github.com/godarch/darch/pkg/reference"
+	"github.com/godarch/darch/pkg/repository"
 	"github.com/urfave/cli"
 )
 

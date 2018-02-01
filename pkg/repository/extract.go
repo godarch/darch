@@ -13,10 +13,10 @@ import (
 	"github.com/containerd/containerd/mount"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/oci"
+	"github.com/godarch/darch/pkg/reference"
+	"github.com/godarch/darch/pkg/utils"
+	"github.com/godarch/darch/pkg/workspace"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/pauldotknopf/darch/pkg/reference"
-	"github.com/pauldotknopf/darch/pkg/utils"
-	"github.com/pauldotknopf/darch/pkg/workspace"
 )
 
 // ExtractImage Extracts an image (with tag) to a specified directory

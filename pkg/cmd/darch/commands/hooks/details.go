@@ -3,8 +3,8 @@ package hooks
 import (
 	"fmt"
 
-	"github.com/pauldotknopf/darch/pkg/hooks"
-	"github.com/pauldotknopf/darch/pkg/staging"
+	"github.com/godarch/darch/pkg/hooks"
+	"github.com/godarch/darch/pkg/staging"
 	"github.com/urfave/cli"
 )
 

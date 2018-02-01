@@ -3,8 +3,8 @@ package recipes
 import (
 	"fmt"
 
-	"github.com/pauldotknopf/darch/pkg/recipes"
-	"github.com/pauldotknopf/darch/pkg/utils"
+	"github.com/godarch/darch/pkg/recipes"
+	"github.com/godarch/darch/pkg/utils"
 	"github.com/urfave/cli"
 )
 

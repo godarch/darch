@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/gobwas/glob"
-	"github.com/pauldotknopf/darch/pkg/utils"
+	"github.com/godarch/darch/pkg/utils"
 	"github.com/urfave/cli"
 )
 
