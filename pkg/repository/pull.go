@@ -6,7 +6,7 @@ import (
 	"github.com/containerd/containerd/remotes"
 
 	"github.com/containerd/containerd/namespaces"
-	"github.com/pauldotknopf/darch/pkg/reference"
+	"github.com/godarch/darch/pkg/reference"
 )
 
 // Pull Pulls an image locally.

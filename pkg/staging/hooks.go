@@ -6,11 +6,11 @@ import (
 	"os/exec"
 	"path"
 
-	"github.com/pauldotknopf/darch/pkg/workspace"
+	"github.com/godarch/darch/pkg/workspace"
 
-	"github.com/pauldotknopf/darch/pkg/hooks"
-	"github.com/pauldotknopf/darch/pkg/reference"
-	"github.com/pauldotknopf/darch/pkg/utils"
+	"github.com/godarch/darch/pkg/hooks"
+	"github.com/godarch/darch/pkg/reference"
+	"github.com/godarch/darch/pkg/utils"
 )
 
 // RunAllHooks Run the hooks on every image.

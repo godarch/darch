@@ -1,6 +1,6 @@
 package staging
 
-import "github.com/pauldotknopf/darch/pkg/reference"
+import "github.com/godarch/darch/pkg/reference"
 
 // Remove Removes an image from the stage.
 func (session *Session) Remove(imageRef reference.ImageRef) error {

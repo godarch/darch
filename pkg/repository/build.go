@@ -13,13 +13,13 @@ import (
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/containerd/containerd/oci"
+	"github.com/godarch/darch/pkg/recipes"
+	"github.com/godarch/darch/pkg/reference"
+	"github.com/godarch/darch/pkg/repository/manifest"
+	"github.com/godarch/darch/pkg/utils"
+	"github.com/godarch/darch/pkg/workspace"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/pauldotknopf/darch/pkg/recipes"
-	"github.com/pauldotknopf/darch/pkg/reference"
-	"github.com/pauldotknopf/darch/pkg/repository/manifest"
-	"github.com/pauldotknopf/darch/pkg/utils"
-	"github.com/pauldotknopf/darch/pkg/workspace"
 )
 
 // BuildRecipe Builds a recipe.

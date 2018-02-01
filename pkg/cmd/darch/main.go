@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/pauldotknopf/darch/pkg/cmd/darch/commands/helpers"
-	"github.com/pauldotknopf/darch/pkg/cmd/darch/commands/hooks"
-	"github.com/pauldotknopf/darch/pkg/cmd/darch/commands/images"
-	"github.com/pauldotknopf/darch/pkg/cmd/darch/commands/recipes"
-	"github.com/pauldotknopf/darch/pkg/cmd/darch/commands/stage"
+	"github.com/godarch/darch/pkg/cmd/darch/commands/helpers"
+	"github.com/godarch/darch/pkg/cmd/darch/commands/hooks"
+	"github.com/godarch/darch/pkg/cmd/darch/commands/images"
+	"github.com/godarch/darch/pkg/cmd/darch/commands/recipes"
+	"github.com/godarch/darch/pkg/cmd/darch/commands/stage"
 
 	"github.com/urfave/cli"
 )

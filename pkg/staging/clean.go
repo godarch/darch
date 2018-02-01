@@ -4,7 +4,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/pauldotknopf/darch/pkg/utils"
+	"github.com/godarch/darch/pkg/utils"
 )
 
 // Clean goes through all the images in the live directory and deletes them

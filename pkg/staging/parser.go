@@ -6,8 +6,8 @@ import (
 	"io/ioutil"
 	"path"
 
-	"github.com/pauldotknopf/darch/pkg/reference"
-	"github.com/pauldotknopf/darch/pkg/utils"
+	"github.com/godarch/darch/pkg/reference"
+	"github.com/godarch/darch/pkg/utils"
 )
 
 // StagedImage A staged image

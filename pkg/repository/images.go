@@ -7,7 +7,7 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/namespaces"
-	"github.com/pauldotknopf/darch/pkg/reference"
+	"github.com/godarch/darch/pkg/reference"
 	"github.com/pkg/errors"
 )
 

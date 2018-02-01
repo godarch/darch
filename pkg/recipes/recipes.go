@@ -3,7 +3,7 @@ package recipes
 import (
 	"fmt"
 
-	"github.com/pauldotknopf/darch/pkg/utils"
+	"github.com/godarch/darch/pkg/utils"
 )
 
 // Recipe A struct representing a recipe to be built.

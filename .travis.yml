@@ -4,7 +4,7 @@ go:
   - 1.9.2
 services:
   - docker
-go_import_path: github.com/pauldotknopf/darch
+go_import_path: github.com/godarch/darch
 before_install:
   - echo "deb http://archive.ubuntu.com/ubuntu trusty-backports main restricted universe multiverse" | sudo tee -a /etc/apt/sources.list
   - sudo apt-get -qq update

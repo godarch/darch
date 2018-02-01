@@ -5,8 +5,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/pauldotknopf/darch/pkg/reference"
-	"github.com/pauldotknopf/darch/pkg/utils"
+	"github.com/godarch/darch/pkg/reference"
+	"github.com/godarch/darch/pkg/utils"
 )
 
 // UploadDirectoryWithMove Moves (not copy) a directory to staging for boot.

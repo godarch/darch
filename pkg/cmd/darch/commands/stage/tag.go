@@ -1,8 +1,8 @@
 package stage
 
 import (
-	"github.com/pauldotknopf/darch/pkg/reference"
-	"github.com/pauldotknopf/darch/pkg/staging"
+	"github.com/godarch/darch/pkg/reference"
+	"github.com/godarch/darch/pkg/staging"
 	"github.com/urfave/cli"
 )
 

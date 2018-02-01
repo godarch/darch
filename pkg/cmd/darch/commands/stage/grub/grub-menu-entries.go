@@ -1,8 +1,8 @@
 package grub
 
 import (
-	"github.com/pauldotknopf/darch/pkg/cmd/darch/commands"
-	"github.com/pauldotknopf/darch/pkg/staging"
+	"github.com/godarch/darch/pkg/cmd/darch/commands"
+	"github.com/godarch/darch/pkg/staging"
 	"github.com/urfave/cli"
 	"os"
 )

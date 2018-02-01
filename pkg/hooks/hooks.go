@@ -10,8 +10,8 @@ import (
 	"sort"
 
 	"github.com/gobwas/glob"
-	"github.com/pauldotknopf/darch/pkg/reference"
-	"github.com/pauldotknopf/darch/pkg/utils"
+	"github.com/godarch/darch/pkg/reference"
+	"github.com/godarch/darch/pkg/utils"
 )
 
 var (

@@ -1,7 +1,7 @@
 package stage
 
 import (
-	"github.com/pauldotknopf/darch/pkg/cmd/darch/commands/stage/grub"
+	"github.com/godarch/darch/pkg/cmd/darch/commands/stage/grub"
 	"github.com/urfave/cli"
 )
 
