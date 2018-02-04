@@ -1,6 +1,7 @@
 package staging
 
 import (
+	"github.com/godarch/darch/pkg/reference"
 	"path"
 )
 
@@ -37,4 +38,17 @@ func (session *Session) GetAllStaged() ([]StagedImageNamed, error) {
 	}
 
 	return result, nil
+}
+
+// IsStaged Is the given reference currently staged?
+func (session *Session) IsStaged(imageRef reference.ImageRef) (bool, error) {
+	_, err := session.imageStore.Get(imageRef)
+	if err == nil {
+		// We got a valid id for this image, which means it's already staged.
+		return true, nil
+	}
+	if err == reference.ErrDoesNotExist {
+		return false, nil
+	}
+	return false, err
 }

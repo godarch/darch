@@ -3,6 +3,7 @@ package stage
 import (
 	"context"
 
+	"fmt"
 	"github.com/godarch/darch/pkg/cmd/darch/commands"
 	"github.com/godarch/darch/pkg/reference"
 	"github.com/godarch/darch/pkg/repository"
@@ -46,6 +47,17 @@ var uploadCommand = cli.Command{
 		stagingSession, err := staging.NewSession()
 		if err != nil {
 			return err
+		}
+
+		// If the user isn't forcing this upload, let's do a quick check to see if it is already uploaded.
+		if !force {
+			isStaged, err := stagingSession.IsStaged(imageRef)
+			if err != nil {
+				return err
+			}
+			if isStaged {
+				return fmt.Errorf("image already exists on stage, --force to overwrite")
+			}
 		}
 
 		ws, err := workspace.NewWorkspace(staging.DefaultStagingDirectoryTmp)
