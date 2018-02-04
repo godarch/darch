@@ -15,6 +15,15 @@ func (session *Session) Clean() error {
 		return err
 	}
 
+	// Let's get the ID of our current booted image, so we don't delete it.
+	currentBootID := ""
+	{
+		currentBootedImage, err := session.GetCurrentBootedImage()
+		if err != nil {
+			currentBootID = currentBootedImage.ID
+		}
+	}
+
 	databaseImages, err := session.imageStore.AllImages()
 	if err != nil {
 		return err
@@ -24,6 +33,12 @@ func (session *Session) Clean() error {
 		found := false
 		for _, databaseImage := range databaseImages {
 			if databaseImage.ID == liveImage {
+				found = true
+			}
+		}
+		if !found {
+			// It isn't in database, but are we currently booting it?
+			if liveImage == currentBootID {
 				found = true
 			}
 		}

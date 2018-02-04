@@ -1,8 +1,11 @@
 package staging
 
 import (
+	"fmt"
 	"github.com/godarch/darch/pkg/reference"
+	"io/ioutil"
 	"path"
+	"strings"
 )
 
 var (
@@ -34,6 +37,7 @@ func (session *Session) GetAllStaged() ([]StagedImageNamed, error) {
 		result = append(result, StagedImageNamed{
 			StagedImage: image,
 			Ref:         association.Ref,
+			ID:          association.ID,
 		})
 	}
 
@@ -51,4 +55,41 @@ func (session *Session) IsStaged(imageRef reference.ImageRef) (bool, error) {
 		return false, nil
 	}
 	return false, err
+}
+
+// GetCurrentBootedImage Looks at /proc/cmdline to try and determine what image is currently booted.
+// Returns reference.ErrDoesNotExist if entry isn't present.
+func (session *Session) GetCurrentBootedImage() (StagedImageNamed, error) {
+	result := StagedImageNamed{}
+	cmdLineBytes, err := ioutil.ReadFile("/proc/cmdline")
+
+	if err != nil {
+		return result, err
+	}
+
+	cmdLine := string(cmdLineBytes)
+
+	cmdLineArgs := strings.Split(cmdLine, " ")
+
+	for _, cmdLineArg := range cmdLineArgs {
+		cmdLineArg = strings.TrimSpace(cmdLineArg)
+		if strings.HasPrefix(cmdLineArg, "darch_stageid=") {
+			stageID := cmdLineArg[len("darch_stageid="):]
+			if len(stageID) == 0 {
+				return result, fmt.Errorf("invalid stage id")
+			}
+			allStagedImages, err := session.GetAllStaged()
+			if err != nil {
+				return result, err
+			}
+			for _, stagedImage := range allStagedImages {
+				if stagedImage.ID == stageID {
+					return stagedImage, nil
+				}
+			}
+			return result, fmt.Errorf("staged id %s wasn't found", stageID)
+		}
+	}
+
+	return result, reference.ErrDoesNotExist
 }

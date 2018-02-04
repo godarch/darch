@@ -16,7 +16,9 @@ var (
 			removeCommand,
 			tagCommand,
 			runHooksCommand,
+			cleanCommand,
 			syncBootloaderCommand,
+			currentCommand,
 			grub.Command,
 		},
 	}
