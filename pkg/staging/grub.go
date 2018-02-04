@@ -31,7 +31,11 @@ func (session *Session) PrintGrubMenuEntry(stagedImage StagedImageNamed, output 
 	if err != nil {
 		return err
 	}
-	commandLine := fmt.Sprintf("darch_rootfs=%s darch_dir=UUID=%s:%s", stagedImage.RootFS, uuid, relPathTodevice)
+	commandLine := fmt.Sprintf("darch_rootfs=%s darch_dir=UUID=%s:%s darch_stageid=%s",
+		stagedImage.RootFS,
+		uuid,
+		relPathTodevice,
+		stagedImage.ID)
 
 	return grub.MenuEntry(fmt.Sprintf("Darch - %s", stagedImage.Ref.FullName()), func(w io.Writer) error {
 		err := grub.PrepareAccessToDevice(device, w)

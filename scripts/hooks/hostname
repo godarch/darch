@@ -8,8 +8,10 @@ help() {
 install() {
     local glob_config_file="$DARCH_HOOKS_DIR/hostname.config"
     if [ ! -e "$glob_config_file" ]; then
-        echo "Glob config doesn't exist, not using same hostname of running machine..."
-        cp /etc/hostname hostname
+        echo "Glob config doesn't exist, attempting to use hostname of running machine..."
+        if [ -e /etc/hostname ]; then
+            cp /etc/hostname hostname
+        fi
         exit 0
     fi
 
