@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/openconfig/goyang/pkg/indent"
+	"github.com/pkg/errors"
 	"io"
 	"os/exec"
 )
@@ -28,7 +29,7 @@ func PrepareAccessToDevice(device string, output io.Writer) error {
 		"-c",
 		fmt.Sprintf(". /usr/share/grub/grub-mkconfig_lib && prepare_grub_to_access_device %s", device))
 	if err != nil {
-		return err
+		return errors.Wrap(err, "error using grub to get access to device")
 	}
 
 	for _, line := range result {
