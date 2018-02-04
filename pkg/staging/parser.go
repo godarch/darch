@@ -22,6 +22,7 @@ type StagedImage struct {
 type StagedImageNamed struct {
 	StagedImage
 	Ref reference.ImageRef
+	ID  string
 }
 
 type stagedImageConfiguration struct {
