@@ -7,3 +7,4 @@ scripts/aur/PKGBUILD
 scripts/aur/aur/
 tmp/
 output/
+debug.test

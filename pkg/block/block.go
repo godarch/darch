@@ -66,7 +66,7 @@ func GetPathRelativeToBlockDevice(p string) (string, error) {
 		return "", err
 	}
 
-	if len(result) == 2 && result[0] == "Mounted on" {
+	if len(result) == 2 {
 		return path.Join("/", p[len(result[1]):]), nil
 	}
 
