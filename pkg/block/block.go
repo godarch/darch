@@ -20,7 +20,10 @@ func GetBlockDeviceForPath(path string) (string, error) {
 		return "", err
 	}
 
-	if len(result) == 2 && result[0] == "Filesystem" {
+	if len(result) == 2 {
+		if result[1] == "-" {
+			return "", fmt.Errorf("error getting block device for %s, possibly not on block device", path)
+		}
 		return result[1], nil
 	}
 

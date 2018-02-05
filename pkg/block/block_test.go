@@ -6,7 +6,7 @@ import (
 
 func TestBlockDevice(t *testing.T) {
 	t.Skip()
-	device, err := GetBlockDeviceForPath("/usr/bin/darch")
+	device, err := GetBlockDeviceForPath("/etc/darch/grub.cfg")
 	if err != nil {
 		t.Fatal(err)
 	}
