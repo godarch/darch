@@ -13,6 +13,7 @@ DESTINATION_BUNDLE_FILE_NAME_WITH_RUNTIME="darch-$(GOARCH)-with-runtime.tar.gz"
 # Where the files will be installed
 DESTDIR=/
 CURRENTDIR=$(shell pwd)
+GO_BUILD_FLAGS=
 
 .PHONY: clean_build build test lint vendor clean_bundle bundle install release ci_deps ci
 
@@ -23,7 +24,7 @@ clean_build:
 	@rm -rf bin/
 build: clean_build
 	@echo "bin/darch"
-	@go build -ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o bin/darch pkg/cmd/darch/main.go
+	@go build ${GO_BUILD_FLAGS} -ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o bin/darch pkg/cmd/darch/main.go
 clean_containerd:
 	@echo "cleaning tmp/containerd"
 	@rm -rf tmp/containerd
