@@ -2,6 +2,7 @@ package reference
 
 import (
 	dockerref "github.com/docker/distribution/reference"
+	"strings"
 )
 
 const (
@@ -62,7 +63,7 @@ func (image *imageRef) Name() string {
 func (image *imageRef) Domain() string {
 	ref, _ := dockerref.Parse(image.fullname)
 	named, _ := ref.(dockerref.Named)
-	domain, _ := dockerref.SplitHostname(named)
+	domain, _ := splitDomain(named.Name())
 	return domain
 }
 
@@ -99,9 +100,19 @@ func (image *imageRef) WithName(name string) (ImageRef, error) {
 func (image *imageRef) WithDomain(domain string) (ImageRef, error) {
 	ref, _ := dockerref.Parse(image.fullname)
 	named, _ := ref.(dockerref.Named)
-	_, name := dockerref.SplitHostname(named)
+	_, name := splitDomain(named.Name())
 	if len(domain) == 0 {
 		return image.WithName(name)
 	}
 	return image.WithName(domain + "/" + name)
+}
+
+func splitDomain(name string) (domain, remainder string) {
+	i := strings.IndexRune(name, '/')
+	if i == -1 || (!strings.ContainsAny(name[:i], ".:") && name[:i] != "localhost") {
+		domain, remainder = "", name
+	} else {
+		domain, remainder = name[:i], name[i+1:]
+	}
+	return domain, remainder
 }

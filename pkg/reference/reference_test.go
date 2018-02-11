@@ -16,6 +16,13 @@ type referenceTest struct {
 var (
 	referenceTests = []referenceTest{
 		{
+			Input:            "base/image",
+			ExpectedDomain:   "",
+			ExpectedName:     "base/image",
+			ExpectedTag:      "latest",
+			ExpectedFullName: "base/base:latest",
+		},
+		{
 			Input:            "base",
 			ExpectedDomain:   "",
 			ExpectedName:     "base",
@@ -35,6 +42,13 @@ var (
 			ExpectedName:     "domain.com/base",
 			ExpectedTag:      "tag",
 			ExpectedFullName: "domain.com/base:tag",
+		},
+		{
+			Input:            "domain_com/base:tag",
+			ExpectedDomain:   "",
+			ExpectedName:     "domain_com/base",
+			ExpectedTag:      "tag",
+			ExpectedFullName: "domain_com/base:tag",
 		},
 		{
 			Input:      "",
