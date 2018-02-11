@@ -4,6 +4,11 @@ import (
 	dockerref "github.com/docker/distribution/reference"
 )
 
+const (
+	// DefaultDomain The default domain, if none was specified.
+	DefaultDomain = "docker.io"
+)
+
 // ImageRef An image reference.
 type ImageRef interface {
 	Tag() string
