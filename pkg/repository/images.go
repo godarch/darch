@@ -34,8 +34,8 @@ func (session *Session) GetImages(ctx context.Context) ([]Image, error) {
 			return nil, err
 		}
 		result = append(result, Image{
-			Name:      ref.Name,
-			Tag:       ref.Tag,
+			Name:      ref.Name(),
+			Tag:       ref.Tag(),
 			CreatedAt: img.CreatedAt,
 		})
 	}

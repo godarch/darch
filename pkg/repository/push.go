@@ -16,9 +16,23 @@ func (session *Session) Push(ctx context.Context, imageRef reference.ImageRef, r
 	if err != nil {
 		return err
 	}
+
+	pushRef := imageRef
+	if len(pushRef.Domain()) == 0 {
+		parsedRef, err := pushRef.WithDomain(reference.DefaultDomain)
+		if err != nil {
+			return err
+		}
+		pushRef = parsedRef
+	}
+
 	err = session.client.Push(ctx,
-		image.Name(),
+		pushRef.FullName(),
 		image.Target(),
-		containerd.WithResolver(resolver))
+		containerd.WithResolver(&overrideNameResolve{
+			RealResolver: resolver,
+			Name:         imageRef.FullName(),
+			FullRef:      pushRef.FullName(),
+		}))
 	return err
 }

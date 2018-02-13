@@ -1,16 +1,28 @@
 package reference
 
 import (
-	"fmt"
+	dockerref "github.com/docker/distribution/reference"
 	"strings"
+)
 
-	containerdref "github.com/containerd/containerd/reference"
+const (
+	// DefaultDomain The default domain, if none was specified.
+	DefaultDomain = "docker.io"
 )
 
 // ImageRef An image reference.
-type ImageRef struct {
-	Name string
-	Tag  string
+type ImageRef interface {
+	Tag() string
+	Name() string
+	Domain() string
+	FullName() string
+	WithTag(tag string) (ImageRef, error)
+	WithName(name string) (ImageRef, error)
+	WithDomain(domain string) (ImageRef, error)
+}
+
+type imageRef struct {
+	fullname string
 }
 
 // ParseImage Parses a string for image:tag.
@@ -20,46 +32,87 @@ func ParseImage(val string) (ImageRef, error) {
 
 // ParseImageWithDefaultTag Parse an image name. If not tag is given in the image name, use the optionalTag as the tag.
 func ParseImageWithDefaultTag(val, optionalTag string) (ImageRef, error) {
-	if len(val) == 0 {
-		return ImageRef{}, fmt.Errorf("no image name provided")
-	}
-	result := ImageRef{}
-	spec, err := containerdref.Parse(val)
+	ref, err := dockerref.Parse(val)
 	if err != nil {
-		return result, err
-	}
-	if len(spec.Object) != 0 {
-		result.Name = spec.Locator
-		result.Tag = spec.Object
-	}
-	split := strings.Split(val, ":")
-	if len(split) > 2 {
-		return result, fmt.Errorf("invalid format")
-	}
-	result.Name = split[0]
-	if len(split) == 2 {
-		result.Tag = split[1]
+		return nil, err
 	}
 
-	if len(result.Tag) == 0 {
-		result.Tag = optionalTag
+	if _, ok := ref.(dockerref.Tagged); !ok {
+		// There was no tag
+		val = val + ":" + optionalTag
+		ref, err = dockerref.Parse(val)
 	}
-	if len(result.Name) == 0 {
-		return result, fmt.Errorf("invalid format")
-	}
-	return result, nil
+
+	return &imageRef{
+		fullname: val,
+	}, nil
 }
 
-// WithTag Changes the tag of a image reference.
-func (image ImageRef) WithTag(tag string) (ImageRef, error) {
-	if len(tag) == 0 {
-		return image, fmt.Errorf("tag required")
-	}
-	image.Tag = tag
-	return image, nil
+func (image *imageRef) Tag() string {
+	ref, _ := dockerref.Parse(image.fullname)
+	tagged, _ := ref.(dockerref.Tagged)
+	return tagged.Tag()
 }
 
-// FullName Returns image:tag for the image reference.
-func (image ImageRef) FullName() string {
-	return image.Name + ":" + image.Tag
+func (image *imageRef) Name() string {
+	ref, _ := dockerref.Parse(image.fullname)
+	named, _ := ref.(dockerref.Named)
+	return named.Name()
+}
+
+func (image *imageRef) Domain() string {
+	ref, _ := dockerref.Parse(image.fullname)
+	named, _ := ref.(dockerref.Named)
+	domain, _ := splitDomain(named.Name())
+	return domain
+}
+
+func (image *imageRef) FullName() string {
+	return image.fullname
+}
+
+func (image *imageRef) WithTag(tag string) (ImageRef, error) {
+	ref, _ := dockerref.Parse(image.fullname)
+	named, _ := ref.(dockerref.Named)
+	namedTagged, err := dockerref.WithTag(named, tag)
+	if err != nil {
+		return nil, err
+	}
+	return &imageRef{
+		fullname: namedTagged.String(),
+	}, nil
+}
+
+func (image *imageRef) WithName(name string) (ImageRef, error) {
+	ref, _ := dockerref.Parse(image.fullname)
+	tagged, _ := ref.(dockerref.Tagged)
+
+	ref, err := dockerref.Parse(name + ":" + tagged.Tag())
+	if err != nil {
+		return nil, err
+	}
+
+	return &imageRef{
+		fullname: ref.String(),
+	}, nil
+}
+
+func (image *imageRef) WithDomain(domain string) (ImageRef, error) {
+	ref, _ := dockerref.Parse(image.fullname)
+	named, _ := ref.(dockerref.Named)
+	_, name := splitDomain(named.Name())
+	if len(domain) == 0 {
+		return image.WithName(name)
+	}
+	return image.WithName(domain + "/" + name)
+}
+
+func splitDomain(name string) (domain, remainder string) {
+	i := strings.IndexRune(name, '/')
+	if i == -1 || (!strings.ContainsAny(name[:i], ".:") && name[:i] != "localhost") {
+		domain, remainder = "", name
+	} else {
+		domain, remainder = name[:i], name[i+1:]
+	}
+	return domain, remainder
 }

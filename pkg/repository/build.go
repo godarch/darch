@@ -33,7 +33,7 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 
 	newImage, err := reference.ParseImage(imagePrefix + recipe.Name + ":" + tag)
 	if err != nil {
-		return reference.ImageRef{}, err
+		return nil, err
 	}
 
 	// Use the image prefix when inheriting local recipes.
@@ -49,7 +49,7 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 	// the recipe with.
 	// This allows use to "darch build -t custom-tag base base-common"
 	// and each built image will use the appropriate inherited image.
-	inheritsRef, err := reference.ParseImageWithDefaultTag(inherits, newImage.Tag)
+	inheritsRef, err := reference.ParseImageWithDefaultTag(inherits, newImage.Tag())
 	if err != nil {
 		return newImage, err
 	}
