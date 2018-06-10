@@ -13,10 +13,10 @@ install() {
     # We should actually generate new ssh keys.
     if [ ! -e /etc/darch/ssh/default ]; then
         mkdir -p /etc/darch/ssh/default
-        cp /etc/ssh/ssh_host_* /etc/darch/ssh/default
+        cp /etc/ssh/ssh_host_* /etc/darch/ssh/default || true
     fi
 
-    cp /etc/darch/ssh/default/ssh_host_* .
+    cp /etc/darch/ssh/default/ssh_host_* . || true
 }
 
 run() {
@@ -24,5 +24,5 @@ run() {
     if [ ! -e $DARCH_ROOT_FS/etc/ssh ]; then
         mkdir -p "$DARCH_ROOT_FS/etc/ssh"
     fi
-    cp $DARCH_HOOK_DIR/ssh_host_* $DARCH_ROOT_FS/etc/ssh
+    cp $DARCH_HOOK_DIR/ssh_host_* $DARCH_ROOT_FS/etc/ssh || true
 }
