@@ -13,7 +13,7 @@ install() {
     # We should actually generate new ssh keys.
     if [ ! -e /etc/darch/ssh/default ]; then
         mkdir -p /etc/darch/ssh/default
-        cp /etc/ssh/ssh_host_* /etc/darch/ssh/default
+        cp /etc/ssh/ssh_host_* /etc/darch/ssh/default || true
     fi
 
     cp /etc/darch/ssh/default/ssh_host_* .
