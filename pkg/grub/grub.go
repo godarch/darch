@@ -27,7 +27,7 @@ func PrepareAccessToDevice(device string, output io.Writer) error {
 	result, err := runCommand("/usr/bin/env",
 		"bash",
 		"-c",
-		fmt.Sprintf(". /usr/share/grub/grub-mkconfig_lib && prepare_grub_to_access_device %s", device))
+		fmt.Sprintf(". /usr/share/grub/grub-mkconfig_lib && GRUB_ENABLE_CRYPTODISK=y prepare_grub_to_access_device %s", device))
 	if err != nil {
 		return errors.Wrap(err, "error using grub to get access to device")
 	}
