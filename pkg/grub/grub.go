@@ -20,14 +20,19 @@ import (
 //   search --no-floppy --fs-uuid --set=root a85bf1c9-59a1-4dba-9df9-6fbbfa03466c
 // fi
 // ---------
-func PrepareAccessToDevice(device string, output io.Writer) error {
+func PrepareAccessToDevice(device string, output io.Writer, enableCryptoDisk bool) error {
 	if len(device) == 0 {
 		return fmt.Errorf("device is required")
+	}
+	cryptoDiskPart := ""
+	if enableCryptoDisk {
+		cryptoDiskPart = "GRUB_ENABLE_CRYPTODISK=y "
+
 	}
 	result, err := runCommand("/usr/bin/env",
 		"bash",
 		"-c",
-		fmt.Sprintf(". /usr/share/grub/grub-mkconfig_lib && GRUB_ENABLE_CRYPTODISK=y prepare_grub_to_access_device %s", device))
+		fmt.Sprintf(". /usr/share/grub/grub-mkconfig_lib && %sprepare_grub_to_access_device %s", cryptoDiskPart, device))
 	if err != nil {
 		return errors.Wrap(err, "error using grub to get access to device")
 	}

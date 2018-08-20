@@ -38,7 +38,7 @@ func (session *Session) PrintGrubMenuEntry(stagedImage StagedImageNamed, output 
 		stagedImage.ID)
 
 	return grub.MenuEntry(fmt.Sprintf("Darch - %s", stagedImage.Ref.FullName()), func(w io.Writer) error {
-		err := grub.PrepareAccessToDevice(device, w)
+		err := grub.PrepareAccessToDevice(device, w, false)
 		if err != nil {
 			return err
 		}
