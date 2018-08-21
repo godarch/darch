@@ -13,6 +13,12 @@ import (
 var grubConfigEntryCommand = cli.Command{
 	Name:        "config-entry",
 	Description: "outputs grub code to include /etc/darch/grub.cfg on boot",
+	Flags: []cli.Flag{
+		cli.BoolFlag{
+			Name:  "cryptodisk,c",
+			Usage: "enable cryptodisk feature (for encrypted /boot)",
+		},
+	},
 	Action: func(clicontext *cli.Context) error {
 		err := commands.CheckForRoot()
 		if err != nil {
@@ -32,7 +38,7 @@ var grubConfigEntryCommand = cli.Command{
 		}
 
 		// Write the required grub code to access the device that our darch grub.cfg exists.
-		err = grub.PrepareAccessToDevice(device, os.Stdout)
+		err = grub.PrepareAccessToDevice(device, os.Stdout, clicontext.Bool("cryptodisk"))
 		if err != nil {
 			return err
 		}
