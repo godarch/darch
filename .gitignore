@@ -1,4 +1,3 @@
-vendor/
 cmd/darch/debug
 bundle/
 bin/
