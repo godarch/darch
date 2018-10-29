@@ -12,10 +12,12 @@ import (
 
 // StagedImage A staged image
 type StagedImage struct {
-	Dir       string
-	Kernel    string
-	InitRAMFS string
-	RootFS    string
+	Dir           string
+	Kernel        string
+	KernelParams  string
+	InitRAMFS     string
+	RootFS        string
+	NoDoubleMount bool
 }
 
 // StagedImageNamed A StagedImage with a name and tag
@@ -26,9 +28,11 @@ type StagedImageNamed struct {
 }
 
 type stagedImageConfiguration struct {
-	Kernel    string `json:"kernel"`
-	InitRAMFS string `json:"initramfs"`
-	RootFS    string `json:"rootfs"`
+	Kernel        string `json:"kernel"`
+	KernelParams  string `json:"kernelparams"`
+	InitRAMFS     string `json:"initramfs"`
+	RootFS        string `json:"rootfs"`
+	NoDoubleMount bool   `json:"nodoublemount"`
 }
 
 // ParseImageDir Parses an image directory, and also validates it.
@@ -71,7 +75,9 @@ func parseImageDir(imageDir string) (StagedImage, error) {
 
 	result.InitRAMFS = config.InitRAMFS
 	result.Kernel = config.Kernel
+	result.KernelParams = config.KernelParams
 	result.RootFS = config.RootFS
+	result.NoDoubleMount = config.NoDoubleMount
 
 	return result, nil
 }
