@@ -57,7 +57,7 @@ func (session *Session) TagImage(ctx context.Context, source, destination refere
 	if err != nil {
 		return err
 	}
-	defer done()
+	defer done(ctx)
 
 	// Make sure the destination image:tag doesn't already exist.
 	destinationImage, err := session.client.GetImage(ctx, destination.FullName())

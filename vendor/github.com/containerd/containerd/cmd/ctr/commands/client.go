@@ -1,3 +1,19 @@
+/*
+   Copyright The containerd Authors.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
 package commands
 
 import (
@@ -30,8 +46,8 @@ func AppContext(context *cli.Context) (gocontext.Context, gocontext.CancelFunc) 
 }
 
 // NewClient returns a new containerd client
-func NewClient(context *cli.Context) (*containerd.Client, gocontext.Context, gocontext.CancelFunc, error) {
-	client, err := containerd.New(context.GlobalString("address"))
+func NewClient(context *cli.Context, opts ...containerd.ClientOpt) (*containerd.Client, gocontext.Context, gocontext.CancelFunc, error) {
+	client, err := containerd.New(context.GlobalString("address"), opts...)
 	if err != nil {
 		return nil, nil, nil, err
 	}

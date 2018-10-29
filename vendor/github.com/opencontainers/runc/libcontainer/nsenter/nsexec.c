@@ -22,7 +22,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-
 #include <linux/limits.h>
 #include <linux/netlink.h>
 #include <linux/types.h>
@@ -32,15 +31,15 @@
 
 /* Synchronisation values. */
 enum sync_t {
-	SYNC_USERMAP_PLS = 0x40, /* Request parent to map our users. */
-	SYNC_USERMAP_ACK = 0x41, /* Mapping finished by the parent. */
-	SYNC_RECVPID_PLS = 0x42, /* Tell parent we're sending the PID. */
-	SYNC_RECVPID_ACK = 0x43, /* PID was correctly received by parent. */
-	SYNC_GRANDCHILD  = 0x44, /* The grandchild is ready to run. */
-	SYNC_CHILD_READY = 0x45, /* The child or grandchild is ready to return. */
+	SYNC_USERMAP_PLS = 0x40,	/* Request parent to map our users. */
+	SYNC_USERMAP_ACK = 0x41,	/* Mapping finished by the parent. */
+	SYNC_RECVPID_PLS = 0x42,	/* Tell parent we're sending the PID. */
+	SYNC_RECVPID_ACK = 0x43,	/* PID was correctly received by parent. */
+	SYNC_GRANDCHILD = 0x44,	/* The grandchild is ready to run. */
+	SYNC_CHILD_READY = 0x45,	/* The child or grandchild is ready to return. */
 
 	/* XXX: This doesn't help with segfaults and other such issues. */
-	SYNC_ERR = 0xFF, /* Fatal error, no turning back. The error code follows. */
+	SYNC_ERR = 0xFF,	/* Fatal error, no turning back. The error code follows. */
 };
 
 /* longjmp() arguments. */
@@ -73,7 +72,7 @@ struct nlconfig_t {
 	char *oom_score_adj;
 	size_t oom_score_adj_len;
 
-	/* User namespace settings.*/
+	/* User namespace settings. */
 	char *uidmap;
 	size_t uidmap_len;
 	char *gidmap;
@@ -82,8 +81,8 @@ struct nlconfig_t {
 	size_t namespaces_len;
 	uint8_t is_setgroup;
 
-	/* Rootless container settings.*/
-	uint8_t is_rootless;
+	/* Rootless container settings. */
+	uint8_t is_rootless_euid;	/* boolean */
 	char *uidmappath;
 	size_t uidmappath_len;
 	char *gidmappath;
@@ -101,7 +100,7 @@ struct nlconfig_t {
 #define GIDMAP_ATTR			27284
 #define SETGROUP_ATTR		27285
 #define OOM_SCORE_ADJ_ATTR	27286
-#define ROOTLESS_ATTR	    27287
+#define ROOTLESS_EUID_ATTR	27287
 #define UIDMAPPATH_ATTR	    27288
 #define GIDMAPPATH_ATTR	    27289
 
@@ -167,7 +166,7 @@ static int write_file(char *data, size_t data_len, char *pathfmt, ...)
 		goto out;
 	}
 
-out:
+ out:
 	close(fd);
 	return ret;
 }
@@ -184,16 +183,16 @@ static void update_setgroups(int pid, enum policy_t setgroup)
 	char *policy;
 
 	switch (setgroup) {
-		case SETGROUPS_ALLOW:
-			policy = "allow";
-			break;
-		case SETGROUPS_DENY:
-			policy = "deny";
-			break;
-		case SETGROUPS_DEFAULT:
-		default:
-			/* Nothing to do. */
-			return;
+	case SETGROUPS_ALLOW:
+		policy = "allow";
+		break;
+	case SETGROUPS_DENY:
+		policy = "deny";
+		break;
+	case SETGROUPS_DEFAULT:
+	default:
+		/* Nothing to do. */
+		return;
 	}
 
 	if (write_file(policy, strlen(policy), "/proc/%d/setgroups", pid) < 0) {
@@ -212,7 +211,7 @@ static int try_mapping_tool(const char *app, int pid, char *map, size_t map_len)
 
 	/*
 	 * If @app is NULL, execve will segfault. Just check it here and bail (if
-	 * we're in this path, the caller is already getting desparate and there
+	 * we're in this path, the caller is already getting desperate and there
 	 * isn't a backup to this failing). This usually would be a configuration
 	 * or programming issue.
 	 */
@@ -226,14 +225,14 @@ static int try_mapping_tool(const char *app, int pid, char *map, size_t map_len)
 	if (!child) {
 #define MAX_ARGV 20
 		char *argv[MAX_ARGV];
-		char *envp[] = {NULL};
+		char *envp[] = { NULL };
 		char pid_fmt[16];
 		int argc = 0;
 		char *next;
 
 		snprintf(pid_fmt, 16, "%d", pid);
 
-		argv[argc++] = (char *) app;
+		argv[argc++] = (char *)app;
 		argv[argc++] = pid_fmt;
 		/*
 		 * Convert the map string into a list of argument that
@@ -319,7 +318,7 @@ static int clone_parent(jmp_buf *env, int jmpval) __attribute__ ((noinline));
 static int clone_parent(jmp_buf *env, int jmpval)
 {
 	struct clone_t ca = {
-		.env    = env,
+		.env = env,
 		.jmpval = jmpval,
 	};
 
@@ -420,8 +419,8 @@ static void nl_parse(int fd, struct nlconfig_t *config)
 		case CLONE_FLAGS_ATTR:
 			config->cloneflags = readint32(current);
 			break;
-		case ROOTLESS_ATTR:
-			config->is_rootless = readint8(current);
+		case ROOTLESS_EUID_ATTR:
+			config->is_rootless_euid = readint8(current);	/* boolean */
 			break;
 		case OOM_SCORE_ADJ_ATTR:
 			config->oom_score_adj = current;
@@ -506,7 +505,8 @@ void join_namespaces(char *nslist)
 
 		ns->fd = fd;
 		ns->ns = nsflag(namespace);
-		strncpy(ns->path, path, PATH_MAX);
+		strncpy(ns->path, path, PATH_MAX - 1);
+		ns->path[PATH_MAX - 1] = '\0';
 	} while ((namespace = strtok_r(NULL, ",", &saveptr)) != NULL);
 
 	/*
@@ -533,7 +533,7 @@ void nsexec(void)
 	int pipenum;
 	jmp_buf env;
 	int sync_child_pipe[2], sync_grandchild_pipe[2];
-	struct nlconfig_t config = {0};
+	struct nlconfig_t config = { 0 };
 
 	/*
 	 * If we don't have an init pipe, just return to the go routine.
@@ -630,21 +630,21 @@ void nsexec(void)
 	 */
 
 	switch (setjmp(env)) {
-	/*
-	 * Stage 0: We're in the parent. Our job is just to create a new child
-	 *          (stage 1: JUMP_CHILD) process and write its uid_map and
-	 *          gid_map. That process will go on to create a new process, then
-	 *          it will send us its PID which we will send to the bootstrap
-	 *          process.
-	 */
-	case JUMP_PARENT: {
+		/*
+		 * Stage 0: We're in the parent. Our job is just to create a new child
+		 *          (stage 1: JUMP_CHILD) process and write its uid_map and
+		 *          gid_map. That process will go on to create a new process, then
+		 *          it will send us its PID which we will send to the bootstrap
+		 *          process.
+		 */
+	case JUMP_PARENT:{
 			int len;
 			pid_t child, first_child = -1;
 			char buf[JSON_MAX];
 			bool ready = false;
 
 			/* For debugging. */
-			prctl(PR_SET_NAME, (unsigned long) "runc:[0:PARENT]", 0, 0, 0);
+			prctl(PR_SET_NAME, (unsigned long)"runc:[0:PARENT]", 0, 0, 0);
 
 			/* Start the process of getting a container. */
 			child = clone_parent(&env, JUMP_CHILD);
@@ -679,17 +679,15 @@ void nsexec(void)
 					/*
 					 * Enable setgroups(2) if we've been asked to. But we also
 					 * have to explicitly disable setgroups(2) if we're
-					 * creating a rootless container (this is required since
-					 * Linux 3.19).
+					 * creating a rootless container for single-entry mapping.
+					 * i.e. config.is_setgroup == false.
+					 * (this is required since Linux 3.19).
+					 *
+					 * For rootless multi-entry mapping, config.is_setgroup shall be true and
+					 * newuidmap/newgidmap shall be used.
 					 */
-					if (config.is_rootless && config.is_setgroup) {
-						kill(child, SIGKILL);
-						bail("cannot allow setgroup in an unprivileged user namespace setup");
-					}
 
-					if (config.is_setgroup)
-						update_setgroups(child, SETGROUPS_ALLOW);
-					if (config.is_rootless)
+					if (config.is_rootless_euid && !config.is_setgroup)
 						update_setgroups(child, SETGROUPS_DENY);
 
 					/* Set up mappings. */
@@ -702,7 +700,7 @@ void nsexec(void)
 						bail("failed to sync with child: write(SYNC_USERMAP_ACK)");
 					}
 					break;
-				case SYNC_RECVPID_PLS: {
+				case SYNC_RECVPID_PLS:{
 						first_child = child;
 
 						/* Get the init_func pid. */
@@ -781,16 +779,16 @@ void nsexec(void)
 			exit(0);
 		}
 
-	/*
-	 * Stage 1: We're in the first child process. Our job is to join any
-	 *          provided namespaces in the netlink payload and unshare all
-	 *          of the requested namespaces. If we've been asked to
-	 *          CLONE_NEWUSER, we will ask our parent (stage 0) to set up
-	 *          our user mappings for us. Then, we create a new child
-	 *          (stage 2: JUMP_INIT) for PID namespace. We then send the
-	 *          child's PID to our parent (stage 0).
-	 */
-	case JUMP_CHILD: {
+		/*
+		 * Stage 1: We're in the first child process. Our job is to join any
+		 *          provided namespaces in the netlink payload and unshare all
+		 *          of the requested namespaces. If we've been asked to
+		 *          CLONE_NEWUSER, we will ask our parent (stage 0) to set up
+		 *          our user mappings for us. Then, we create a new child
+		 *          (stage 2: JUMP_INIT) for PID namespace. We then send the
+		 *          child's PID to our parent (stage 0).
+		 */
+	case JUMP_CHILD:{
 			pid_t child;
 			enum sync_t s;
 
@@ -799,7 +797,7 @@ void nsexec(void)
 			close(sync_child_pipe[1]);
 
 			/* For debugging. */
-			prctl(PR_SET_NAME, (unsigned long) "runc:[1:CHILD]", 0, 0, 0);
+			prctl(PR_SET_NAME, (unsigned long)"runc:[1:CHILD]", 0, 0, 0);
 
 			/*
 			 * We need to setns first. We cannot do this earlier (in stage 0)
@@ -811,24 +809,29 @@ void nsexec(void)
 				join_namespaces(config.namespaces);
 
 			/*
-			 * Unshare all of the namespaces. Now, it should be noted that this
-			 * ordering might break in the future (especially with rootless
-			 * containers). But for now, it's not possible to split this into
-			 * CLONE_NEWUSER + [the rest] because of some RHEL SELinux issues.
-			 *
-			 * Note that we don't merge this with clone() because there were
-			 * some old kernel versions where clone(CLONE_PARENT | CLONE_NEWPID)
-			 * was broken, so we'll just do it the long way anyway.
-			 */
-			if (unshare(config.cloneflags) < 0)
-				bail("failed to unshare namespaces");
-
-			/*
 			 * Deal with user namespaces first. They are quite special, as they
 			 * affect our ability to unshare other namespaces and are used as
 			 * context for privilege checks.
+			 *
+			 * We don't unshare all namespaces in one go. The reason for this
+			 * is that, while the kernel documentation may claim otherwise,
+			 * there are certain cases where unsharing all namespaces at once
+			 * will result in namespace objects being owned incorrectly.
+			 * Ideally we should just fix these kernel bugs, but it's better to
+			 * be safe than sorry, and fix them separately.
+			 *
+			 * A specific case of this is that the SELinux label of the
+			 * internal kern-mount that mqueue uses will be incorrect if the
+			 * UTS namespace is cloned before the USER namespace is mapped.
+			 * I've also heard of similar problems with the network namespace
+			 * in some scenarios. This also mirrors how LXC deals with this
+			 * problem.
 			 */
 			if (config.cloneflags & CLONE_NEWUSER) {
+				if (unshare(CLONE_NEWUSER) < 0)
+					bail("failed to unshare user namespace");
+				config.cloneflags &= ~CLONE_NEWUSER;
+
 				/*
 				 * We don't have the privileges to do any mapping here (see the
 				 * clone_parent rant). So signal our parent to hook us up.
@@ -854,7 +857,20 @@ void nsexec(void)
 					if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) < 0)
 						bail("failed to set process as dumpable");
 				}
+
+				/* Become root in the namespace proper. */
+				if (setresuid(0, 0, 0) < 0)
+					bail("failed to become root in user namespace");
 			}
+
+			/*
+			 * Unshare all of the namespaces. Note that we don't merge this
+			 * with clone() because there were some old kernel versions where
+			 * clone(CLONE_PARENT | CLONE_NEWPID) was broken, so we'll just do
+			 * it the long way.
+			 */
+			if (unshare(config.cloneflags) < 0)
+				bail("failed to unshare namespaces");
 
 			/*
 			 * TODO: What about non-namespace clone flags that we're dropping here?
@@ -901,13 +917,13 @@ void nsexec(void)
 			exit(0);
 		}
 
-	/*
-	 * Stage 2: We're the final child process, and the only process that will
-	 *          actually return to the Go runtime. Our job is to just do the
-	 *          final cleanup steps and then return to the Go runtime to allow
-	 *          init_linux.go to run.
-	 */
-	case JUMP_INIT: {
+		/*
+		 * Stage 2: We're the final child process, and the only process that will
+		 *          actually return to the Go runtime. Our job is to just do the
+		 *          final cleanup steps and then return to the Go runtime to allow
+		 *          init_linux.go to run.
+		 */
+	case JUMP_INIT:{
 			/*
 			 * We're inside the child now, having jumped from the
 			 * start_child() code after forking in the parent.
@@ -921,7 +937,7 @@ void nsexec(void)
 			close(sync_child_pipe[1]);
 
 			/* For debugging. */
-			prctl(PR_SET_NAME, (unsigned long) "runc:[2:INIT]", 0, 0, 0);
+			prctl(PR_SET_NAME, (unsigned long)"runc:[2:INIT]", 0, 0, 0);
 
 			if (read(syncfd, &s, sizeof(s)) != sizeof(s))
 				bail("failed to sync with parent: read(SYNC_GRANDCHILD)");
@@ -937,7 +953,7 @@ void nsexec(void)
 			if (setgid(0) < 0)
 				bail("setgid failed");
 
-			if (!config.is_rootless && config.is_setgroup) {
+			if (!config.is_rootless_euid && config.is_setgroup) {
 				if (setgroups(0, NULL) < 0)
 					bail("setgroups failed");
 			}

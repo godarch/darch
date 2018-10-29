@@ -1,3 +1,19 @@
+/*
+   Copyright The containerd Authors.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
 package cio
 
 import (
@@ -5,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/containerd/containerd/defaults"
@@ -124,6 +141,15 @@ func NewCreator(opts ...Opt) Creator {
 		if err != nil {
 			return nil, err
 		}
+		if streams.Stdin == nil {
+			fifos.Stdin = ""
+		}
+		if streams.Stdout == nil {
+			fifos.Stdout = ""
+		}
+		if streams.Stderr == nil {
+			fifos.Stderr = ""
+		}
 		return copyIO(fifos, streams)
 	}
 }
@@ -197,3 +223,55 @@ type DirectIO struct {
 }
 
 var _ IO = &DirectIO{}
+
+// LogFile creates a file on disk that logs the task's STDOUT,STDERR.
+// If the log file already exists, the logs will be appended to the file.
+func LogFile(path string) Creator {
+	return func(_ string) (IO, error) {
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			return nil, err
+		}
+		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return nil, err
+		}
+		f.Close()
+		return &logIO{
+			config: Config{
+				Stdout: path,
+				Stderr: path,
+			},
+		}, nil
+	}
+}
+
+type logIO struct {
+	config Config
+}
+
+func (l *logIO) Config() Config {
+	return l.config
+}
+
+func (l *logIO) Cancel() {
+
+}
+
+func (l *logIO) Wait() {
+
+}
+
+func (l *logIO) Close() error {
+	return nil
+}
+
+// Load the io for a container but do not attach
+//
+// Allows io to be loaded on the task for deletion without
+// starting copy routines
+func Load(set *FIFOSet) (IO, error) {
+	return &cio{
+		config:  set.Config,
+		closers: []io.Closer{set},
+	}, nil
+}
