@@ -26,7 +26,7 @@ type manifestImpl struct {
 
 // LoadManifest Load a manifest in-memory for easy interaction.
 func LoadManifest(ctx context.Context, contentStore content.Store, desc ocispec.Descriptor) (Manifest, error) {
-	p, err := content.ReadBlob(ctx, contentStore, desc.Digest)
+	p, err := content.ReadBlob(ctx, contentStore, desc)
 	if err != nil {
 		return nil, err
 	}
@@ -130,8 +130,7 @@ func (m *manifestImpl) AddLayer(ctx context.Context, contentStore content.Store,
 		contentStore,
 		"custom-ref",
 		bytes.NewReader(manifestBytes),
-		newDesc.Size,
-		newDesc.Digest,
+		newDesc,
 		content.WithLabels(labels)); err != nil {
 		return err
 	}
@@ -150,7 +149,7 @@ func patchImageConfig(ctx context.Context, contentStore content.Store, imageConf
 	result := imageConfig
 
 	// Get the current image configuration.
-	p, err := content.ReadBlob(ctx, contentStore, imageConfig.Digest)
+	p, err := content.ReadBlob(ctx, contentStore, imageConfig)
 	if err != nil {
 		return result, err
 	}
@@ -190,8 +189,7 @@ func patchImageConfig(ctx context.Context, contentStore content.Store, imageConf
 	err = content.WriteBlob(ctx, contentStore,
 		"custom-ref",
 		bytes.NewReader(p),
-		result.Size,
-		result.Digest,
+		result,
 	)
 	if err != nil {
 		return result, err

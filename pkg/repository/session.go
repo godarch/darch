@@ -3,7 +3,6 @@ package repository
 import (
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/content"
-	"github.com/containerd/containerd/diff"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/snapshots"
 )
@@ -18,7 +17,7 @@ type Session struct {
 	client      *containerd.Client
 	snapshotter snapshots.Snapshotter
 	imagesStore images.Store
-	differ      diff.Differ
+	differ      containerd.DiffService
 	content     content.Store
 }
 

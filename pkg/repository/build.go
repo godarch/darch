@@ -79,7 +79,7 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 	if err != nil {
 		return newImage, err
 	}
-	defer done()
+	defer done(ctx)
 
 	// Let's create the snapshot that all of our containers will run off of
 	snapshotKey := utils.NewID()
@@ -187,7 +187,7 @@ func (session *Session) createImageFromSnapshot(ctx context.Context, img contain
 	defer session.snapshotter.Remove(ctx, "temp-readonly-parent")
 
 	// Generate a diff in content store
-	diffs, err := session.client.DiffService().DiffMounts(ctx,
+	diffs, err := session.client.DiffService().Compare(ctx,
 		lowerMounts,
 		upperMounts,
 		diff.WithMediaType(ocispec.MediaTypeImageLayerGzip),

@@ -1,7 +1,7 @@
 sudo: required
 language: go
 go:
-  - 1.9.2
+  - 1.10.3
 services:
   - docker
 go_import_path: github.com/godarch/darch

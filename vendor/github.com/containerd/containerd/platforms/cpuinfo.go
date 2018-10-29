@@ -1,3 +1,19 @@
+/*
+   Copyright The containerd Authors.
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
 package platforms
 
 import (
@@ -58,6 +74,22 @@ func getCPUInfo(pattern string) (info string, err error) {
 }
 
 func getCPUVariant() string {
+	if runtime.GOOS == "windows" {
+		// Windows only supports v7 for ARM32 and v8 for ARM64 and so we can use
+		// runtime.GOARCH to determine the variants
+		var variant string
+		switch runtime.GOARCH {
+		case "arm64":
+			variant = "v8"
+		case "arm":
+			variant = "v7"
+		default:
+			variant = "unknown"
+		}
+
+		return variant
+	}
+
 	variant, err := getCPUInfo("Cpu architecture")
 	if err != nil {
 		log.L.WithError(err).Error("failure getting variant")

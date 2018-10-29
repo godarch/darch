@@ -27,7 +27,7 @@ func (session *Session) ExtractImage(ctx context.Context, imageRef reference.Ima
 	if err != nil {
 		return err
 	}
-	defer done()
+	defer done(ctx)
 
 	img, err := session.client.GetImage(ctx, imageRef.FullName())
 	if err != nil {
