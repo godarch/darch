@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-set -e
-
-RECIPE_NAME="$1"
-
-/usr/bin/env bash -c "cd /recipes/$RECIPE_NAME/ && ./script"
