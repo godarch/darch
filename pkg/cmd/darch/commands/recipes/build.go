@@ -33,7 +33,7 @@ var buildCommand = cli.Command{
 			tags        = clicontext.String("tags")
 			imagePrefix = clicontext.String("image-prefix")
 			recipeNames = clicontext.Args()
-			env         = clicontext.StringSlice("env")
+			env         = clicontext.StringSlice("environment")
 		)
 
 		if len(recipeNames) == 0 {
