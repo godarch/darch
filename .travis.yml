@@ -10,4 +10,4 @@ before_install:
   - sudo apt-get -qq update
   - sudo apt-get install -y libseccomp-dev/trusty-backports
 script:
-  - make ci BUNDLE_RUNTIME="yes"
+  - make ci

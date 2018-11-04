@@ -8,6 +8,8 @@ VERSION=$(shell test -n "$(TAG)" && echo $(TAG) | cut -d "v" -f 2 || echo "NA")
 DESTDIR=/
 CURRENTDIR=$(shell pwd)
 GO_BUILD_FLAGS=
+GOARCH=$(shell go env GOARCH)
+DESTINATION_BUNDLE_FILE_NAME="darch-$(GOARCH).tar.gz"
 
 .PHONY: clean_build build test lint vendor clean_bundle bundle install release ci_deps ci
 
@@ -43,6 +45,28 @@ install:
 	@install -D -m 755 scripts/hooks/ssh $(DESTDIR)/etc/darch/hooks/ssh/hook
 	@echo "installing /etc/grub.d/60_darch"
 	@install -D -m 755 scripts/grub-mkconfig-script $(DESTDIR)/etc/grub.d/60_darch
+clean_bundle:
+	@echo "cleaning bundle/"
+	@rm -rf bundle/
+	@echo "cleaning output/"
+	@rm -rf output/
+bundle: clean_bundle
+	@echo "bundling to output/$(DESTINATION_BUNDLE_FILE_NAME)"
+	@$(MAKE) -f $(THIS_FILE) install DESTDIR=bundle
+	@mkdir -p output
+	@rm -f output/$(DESTINATION_BUNDLE_FILE_NAME)
+	@tar -czpf output/$(DESTINATION_BUNDLE_FILE_NAME) -C bundle/ .
+release:
+ifdef TRAVIS_TAG
+	@echo "creating github release"
+	@github-release release --user pauldotknopf --repo darch --tag $(TRAVIS_TAG)
+	@echo "uploading $(DESTINATION_BUNDLE_FILE_NAME)"
+	@github-release upload --user pauldotknopf --repo darch --tag $(TRAVIS_TAG) --name $(DESTINATION_BUNDLE_FILE_NAME) --file output/$(DESTINATION_BUNDLE_FILE_NAME)
+	@echo "updating aur"
+	@. ./scripts/aur/deploy-aur $(VERSION)
+else
+	@echo "not a tagged build, skipping release"
+endif
 ci_deps:
 	@echo "fetching golint"
 	@go get -u github.com/golang/lint/golint
@@ -52,4 +76,4 @@ ci_deps:
 	@go get -u github.com/aktau/github-release
 	@echo "fetching vndr"
 	@go get -u github.com/LK4D4/vndr
-ci: ci_deps lint build
+ci: ci_deps lint build bundle release
