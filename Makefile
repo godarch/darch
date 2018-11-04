@@ -59,11 +59,11 @@ bundle: clean_bundle
 release:
 ifdef TRAVIS_TAG
 	@echo "creating github release for $(TRAVIS_TAG) ($(VERSION))"
-	github-release release --user pauldotknopf --repo darch --tag $(TRAVIS_TAG)
+	@github-release release --user pauldotknopf --repo darch --tag $(TRAVIS_TAG)
 	@echo "uploading $(DESTINATION_BUNDLE_FILE_NAME)"
-	github-release upload --user pauldotknopf --repo darch --tag $(TRAVIS_TAG) --name $(DESTINATION_BUNDLE_FILE_NAME) --file output/$(DESTINATION_BUNDLE_FILE_NAME)
+	@github-release upload --user pauldotknopf --repo darch --tag $(TRAVIS_TAG) --name $(DESTINATION_BUNDLE_FILE_NAME) --file output/$(DESTINATION_BUNDLE_FILE_NAME)
 	@echo "updating aur"
-	. ./scripts/aur/deploy-aur $(VERSION)
+	@./scripts/aur/deploy-aur $(VERSION)
 else
 	@echo "not a tagged build, skipping release"
 endif
