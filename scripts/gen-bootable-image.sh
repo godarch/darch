@@ -76,6 +76,7 @@ arch-chroot rootfs apt-get update
 arch-chroot rootfs apt-get -y install darch
 arch-chroot rootfs mkdir -p /etc/containerd
 echo "root = \"/var/lib/darch/containerd\"" > rootfs/etc/containerd/config.toml
+arch-chroot rootfs systemctl enable containerd
 
 # Run grub-mkconfig again to ensure it loads the Darch grub config file
 arch-chroot rootfs grub-mkconfig -o /boot/grub/grub.cfg
