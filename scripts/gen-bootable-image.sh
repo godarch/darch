@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 set -e
 
-# Packages needed: debootstrap arch-install-scripts virtualbox
+function test-command() {
+    command -v $1 >/dev/null 2>&1 || { echo >&2 "The command \"$1\" is required.  Try \"apt-get install $2\"."; exit 1; }
+}
+
+test-command debootstrap debootstrap
+test-command arch-chroot arch-install-scripts
+test-command genfstab arch-install-scripts
+test-command parted parted
 
 # Download the debs to be used to install debian
 if [ ! -e "debs.tar.gz" ]; then
@@ -105,6 +112,16 @@ umount rootfs/home
 umount rootfs
 losetup -d ${loop_device}
 
-# Generate the vdi for VirtualBox
-VBoxManage convertdd boot.img boot.vdi --format VDI
-chmod 777 boot.vdi
+echo "------------------------"
+echo "Finished creating the boot.img file."
+echo "This file bootable drive that could be dd'd directly to a drive, or converted to a virtual machine."
+echo ""
+echo "Commands for VMs"
+echo "     VirtualBox:   qemu-img convert -O vdi boot.img boot.vdi"
+echo "     VMWare:       qemu-img convert -O vmdk boot.img boot.vmdk"
+echo ""
+echo "NOTE: Ensure your VM has at least 4G of RAM allocated."
+echo ""
+echo "Please follow further instructions here:"
+echo "https://pknopf.com/post/2018-11-07-give-ubuntu-darch-a-ride-in-a-virtual-machine"
+echo "------------------------"
