@@ -7,3 +7,7 @@ scripts/aur/aur/
 tmp/
 output/
 debug.test
+scripts/rootfs
+scripts/boot.img
+scripts/debs.tar.gz
+scripts/boot.vdi
