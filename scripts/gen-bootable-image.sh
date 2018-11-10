@@ -68,8 +68,8 @@ echo "darch-demo" > rootfs/etc/hostname
 # Update all the packages
 arch-chroot rootfs apt-get update
 
-# Install network manager for networking
-arch-chroot rootfs apt-get -y install network-manager
+# Install network manager for networking and SSH
+arch-chroot rootfs apt-get -y install network-manager openssh-server
 
 # Install GRUB
 arch-chroot rootfs grub-install ${loop_device}
