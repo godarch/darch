@@ -5,6 +5,7 @@ import (
 	"github.com/godarch/darch/pkg/reference"
 	"io/ioutil"
 	"path"
+	"sort"
 	"strings"
 )
 
@@ -40,6 +41,9 @@ func (session *Session) GetAllStaged() ([]StagedImageNamed, error) {
 			ID:          association.ID,
 		})
 	}
+
+	// Sort the images.
+	sort.Sort(sortStageImageNamed(result))
 
 	return result, nil
 }

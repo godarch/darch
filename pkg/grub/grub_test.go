@@ -8,7 +8,7 @@ import (
 
 func TestAccess(t *testing.T) {
 	t.Skip()
-	err := PrepareAccessToDevice("/dev/sdd2", os.Stdout)
+	err := PrepareAccessToDevice("/dev/sdd2", os.Stdout, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -25,7 +25,7 @@ func TestKernel(t *testing.T) {
 func TestMenuEntry(t *testing.T) {
 	t.Skip()
 	err := MenuEntry("test entry", func(w io.Writer) error {
-		err := PrepareAccessToDevice("/dev/sdd2", w)
+		err := PrepareAccessToDevice("/dev/sdd2", w, false)
 		if err != nil {
 			return err
 		}
