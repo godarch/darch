@@ -1,0 +1,26 @@
+#!/usr/bin/env sh
+set -e
+
+help() {
+    echo "Help..."
+}
+
+install() {
+    # Let's copy our a machine-id if we 
+    # haven't currently stored it.
+    if [ ! -e /etc/darch/hooks/current-machine-id ]; then
+        if [ -e /etc/machine-id ]; then
+            cp /etc/machine-id /etc/darch/hooks/current-machine-id
+        fi
+    fi
+
+    cp /etc/darch/hooks/current-machine-id . || true
+}
+
+run() {
+    if [ -e "$DARCH_HOOK_DIR/current-machine-id" ]; then
+        rm -f "$DARCH_ROOT_FS/etc/machine-id"
+	    mkdir -p "$DARCH_ROOT_FS/etc" || true
+        cp "$DARCH_HOOK_DIR/current-machine-id" "$DARCH_ROOT_FS/etc/machine-id"
+    fi
+}

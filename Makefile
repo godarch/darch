@@ -43,6 +43,8 @@ install:
 	@install -D -m 755 scripts/hooks/hostname $(DESTDIR)/etc/darch/hooks/hostname/hook
 	@echo "installing /etc/darch/hooks/ssh/hook"
 	@install -D -m 755 scripts/hooks/ssh $(DESTDIR)/etc/darch/hooks/ssh/hook
+	@echo "installing /etc/darch/hooks/machine-id/hook"
+	@install -D -m 755 scripts/hooks/machine-id $(DESTDIR)/etc/darch/hooks/machine-id/hook
 	@echo "installing /etc/grub.d/60_darch"
 	@install -D -m 755 scripts/grub-mkconfig-script $(DESTDIR)/etc/grub.d/60_darch
 clean_bundle:
