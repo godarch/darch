@@ -28,17 +28,17 @@ func (r *overrideNameResolve) Pusher(ctx context.Context, ref string) (remotes.P
 }
 
 // Pull Pulls an image locally.
-func (session *Session) Pull(ctx context.Context, imageRef reference.ImageRef, resolver remotes.Resolver) error {
+func (session *Session) Pull(ctx context.Context, imageRef reference.ImageRef, resolver remotes.Resolver) (containerd.Image, error) {
 	pullRef := imageRef
 	if len(pullRef.Domain()) == 0 {
 		parsedRef, err := pullRef.WithDomain(reference.DefaultDomain)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		pullRef = parsedRef
 	}
 
-	_, err := session.client.Pull(namespaces.WithNamespace(ctx, "darch"),
+	img, err := session.client.Pull(namespaces.WithNamespace(ctx, "darch"),
 		pullRef.FullName(),
 		containerd.WithResolver(&overrideNameResolve{
 			RealResolver: resolver,
@@ -47,5 +47,5 @@ func (session *Session) Pull(ctx context.Context, imageRef reference.ImageRef, r
 		}),
 		containerd.WithPullUnpack)
 
-	return err
+	return img, err
 }
