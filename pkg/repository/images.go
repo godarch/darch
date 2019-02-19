@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"github.com/containerd/containerd/platforms"
 	"time"
 
 	"github.com/containerd/containerd/errdefs"
@@ -41,6 +42,18 @@ func (session *Session) GetImages(ctx context.Context) ([]Image, error) {
 	}
 
 	return result, nil
+}
+
+// GetImageSize Returns the size of an image.
+func (session *Session) GetImageSize(ctx context.Context, name string) (int64, error) {
+	ctx = namespaces.WithNamespace(ctx, "darch")
+
+	img, err := session.client.ImageService().Get(ctx, name)
+	if err != nil {
+		return -1, err
+	}
+
+	return img.Size(ctx, session.client.ContentStore(), platforms.Default())
 }
 
 // TagImage Tag an image.
