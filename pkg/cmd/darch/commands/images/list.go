@@ -6,6 +6,7 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"github.com/containerd/containerd/pkg/progress"
 	"github.com/godarch/darch/pkg/repository"
 	"github.com/urfave/cli"
 )
@@ -41,9 +42,18 @@ var listCommand = cli.Command{
 		}
 
 		tw := tabwriter.NewWriter(os.Stdout, 1, 8, 2, ' ', 0)
-		fmt.Fprintln(tw, "REPOSITORY\tTAG\tCREATED\t")
+		fmt.Fprintln(tw, "REPOSITORY\tTAG\tCREATED\tSIZE\t")
 		for _, img := range imgs {
-			fmt.Fprintf(tw, "%v\t%v\t%v\t\n", img.Name, img.Tag, img.CreatedAt.Format("2006-01-02"))
+			size, err := repo.GetImageSize(context.Background(), fmt.Sprintf("%s:%s", img.Name, img.Tag))
+			if err != nil {
+				return err
+			}
+
+			fmt.Fprintf(tw, "%v\t%v\t%v\t%v\t\n",
+				img.Name,
+				img.Tag,
+				img.CreatedAt.Format("2006-01-02"),
+				progress.Bytes(size))
 		}
 
 		return tw.Flush()
