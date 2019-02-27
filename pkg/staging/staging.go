@@ -43,7 +43,7 @@ func (session *Session) GetAllStaged() ([]StagedImageNamed, error) {
 	}
 
 	// Sort the images.
-	sort.Sort(sortStageImageNamed(result))
+	sort.Sort(sortStagedImageNamedByName(result))
 
 	return result, nil
 }
