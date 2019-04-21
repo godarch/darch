@@ -8,6 +8,8 @@ import (
 	"github.com/opencontainers/image-spec/identity"
 
 	"github.com/containerd/containerd"
+	"github.com/containerd/containerd/errdefs"
+	"github.com/containerd/containerd/remotes"
 
 	"github.com/containerd/containerd/diff"
 	"github.com/containerd/containerd/images"
@@ -23,7 +25,7 @@ import (
 )
 
 // BuildRecipe Builds a recipe.
-func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, tag string, imagePrefix string, env []string) (reference.ImageRef, error) {
+func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, tag string, imagePrefix string, env []string, resolver remotes.Resolver) (reference.ImageRef, error) {
 
 	ctx = namespaces.WithNamespace(ctx, "darch")
 
@@ -56,7 +58,16 @@ func (session *Session) BuildRecipe(ctx context.Context, recipe recipes.Recipe, 
 
 	img, err := session.client.GetImage(ctx, inheritsRef.FullName())
 	if err != nil {
-		return newImage, err
+		if errdefs.IsNotFound(err) {
+			fmt.Printf("pulling %s\n", inheritsRef.FullName())
+			img, err = session.Pull(ctx, inheritsRef, resolver)
+
+			if err != nil {
+				return newImage, err
+			}
+		} else {
+			return newImage, err
+		}
 	}
 
 	ws, err := workspace.NewWorkspace("/tmp")

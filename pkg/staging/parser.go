@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
+	"time"
 
 	"github.com/godarch/darch/pkg/reference"
 	"github.com/godarch/darch/pkg/utils"
@@ -18,6 +20,7 @@ type StagedImage struct {
 	InitRAMFS     string
 	RootFS        string
 	NoDoubleMount bool
+	CreationTime  time.Time
 }
 
 // StagedImageNamed A StagedImage with a name and tag
@@ -73,11 +76,17 @@ func parseImageDir(imageDir string) (StagedImage, error) {
 		return result, fmt.Errorf("rootfs was invalid")
 	}
 
+	stat, err := os.Stat(imageDir)
+	if err != nil {
+		return result, err
+	}
+
 	result.InitRAMFS = config.InitRAMFS
 	result.Kernel = config.Kernel
 	result.KernelParams = config.KernelParams
 	result.RootFS = config.RootFS
 	result.NoDoubleMount = config.NoDoubleMount
+	result.CreationTime = stat.ModTime()
 
 	return result, nil
 }

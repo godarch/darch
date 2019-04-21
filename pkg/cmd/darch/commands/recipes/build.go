@@ -3,6 +3,7 @@ package recipes
 import (
 	"context"
 	"fmt"
+	"github.com/godarch/darch/pkg/cmd/darch/commands"
 	"github.com/godarch/darch/pkg/recipes"
 	"github.com/godarch/darch/pkg/repository"
 	"github.com/urfave/cli"
@@ -62,10 +63,15 @@ var buildCommand = cli.Command{
 			return err
 		}
 
+		resolver, err := commands.GetResolver(clicontext)
+		if err != nil {
+			return err
+		}
+
 		// Now, let's go through each recipe and build it.
 		for _, recipeName := range recipeNames {
 			fmt.Printf("building %s...\n", recipeName)
-			image, err := session.BuildRecipe(context.Background(), allRecipes[recipeName], defaultTag, imagePrefix, env)
+			image, err := session.BuildRecipe(context.Background(), allRecipes[recipeName], defaultTag, imagePrefix, env, resolver)
 			if err != nil {
 				return err
 			}

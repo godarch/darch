@@ -38,7 +38,7 @@ var pullCommand = cli.Command{
 
 		fmt.Printf("pulling %s\n", imageRef.FullName())
 
-		err = repo.Pull(ctx.Background(), imageRef, resolver)
+		_, err = repo.Pull(ctx.Background(), imageRef, resolver)
 		if err != nil {
 			return err
 		}
