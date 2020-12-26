@@ -72,13 +72,13 @@ arch-chroot rootfs apt-get update
 arch-chroot rootfs apt-get -y install network-manager openssh-server
 
 # Install GRUB
-arch-chroot rootfs grub-install ${loop_device}
-arch-chroot rootfs grub-mkconfig -o /boot/grub/grub.cfg
+arch-chroot rootfs /sbin/grub-install ${loop_device}
+arch-chroot rootfs /sbin/grub-mkconfig -o /boot/grub/grub.cfg
 
 # Create the default users
 arch-chroot rootfs apt-get -y install sudo
 arch-chroot rootfs /usr/bin/bash -c 'echo -en "root\nroot" | passwd'
-arch-chroot rootfs useradd -m -G users,sudo -s /usr/bin/bash darch
+arch-chroot rootfs /sbin/useradd -m -G users,sudo -s /usr/bin/bash darch
 arch-chroot rootfs /usr/bin/bash -c 'echo -en "darch\ndarch" | passwd darch'
 
 # Install Darch
