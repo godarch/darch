@@ -37,7 +37,7 @@ func verifyDependencies(recipe Recipe, recipes map[string]Recipe, currentStack m
 		return verifyDependencies(parent, recipes, currentStack)
 	}
 
-	return fmt.Errorf("Recipe defintion %s inherits from %s, which doesn't exist", recipe.Name, recipe.Inherits)
+	return fmt.Errorf("Recipe definition %s inherits from %s, which doesn't exist", recipe.Name, recipe.Inherits)
 }
 
 // GetAllRecipes Return all the recipes in a recipe directory
