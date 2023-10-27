@@ -42,6 +42,57 @@ func LoadManifest(ctx context.Context, contentStore content.Store, desc ocispec.
 	}, nil
 }
 
+// Extract the manifest for a specific platform from Manifest Lists.
+func LoadManifestFromList(ctx context.Context, desc ocispec.Descriptor, contentStore content.Store, os string, arch string) (Manifest, error) {
+	p, err := content.ReadBlob(ctx, contentStore, desc)
+	if err != nil {
+		return nil, err
+	}
+
+	m := map[string]json.RawMessage{}
+	if err := json.Unmarshal(p, &m); err != nil {
+		return nil, err
+	}
+
+	manifestListJSON, err := m["manifests"].MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	var manifestList []json.RawMessage
+
+	if err = json.Unmarshal(manifestListJSON, &manifestList); err != nil {
+		return nil, err
+	}
+
+	// iterate over the manifests and choose the one with architecture the same as the one wanted
+	manifest_json := map[string]json.RawMessage{}
+	for _, manifest := range manifestList {
+		if err := json.Unmarshal(manifest, &manifest_json); err != nil {
+			fmt.Println("error unmarshalling manifest")
+			return nil, err
+		}
+
+		platform := map[string]json.RawMessage{}
+		if err := json.Unmarshal(manifest_json["platform"], &platform); err != nil {
+			fmt.Println("error unmarshalling platform")
+			return nil, err
+		}
+
+		// check if the platform is the same as the current machine's platform
+		// if it is, then we have found the manifest we want to use, so we retrieve
+		// the descriptor and load the manifest!
+
+		if string(platform["os"]) == `"`+os+`"` && strings.EqualFold(string(platform["architecture"]), `"`+arch+`"`) {
+			desc, err := getDescriptor(manifest)
+			if err != nil {
+				return nil, err
+			}
+			return LoadManifest(ctx, contentStore, desc)
+		}
+	}
+	return nil, fmt.Errorf("no manifest found for %s/%s", runtime.GOOS, runtime.GOARCH)
+}
+
 func (m *manifestImpl) AddLayer(ctx context.Context, contentStore content.Store, layer ocispec.Descriptor) error {
 	d := m.d
 

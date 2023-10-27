@@ -184,6 +184,13 @@ func (session *Session) createImageFromSnapshot(ctx context.Context, img contain
 		return err
 	}
 
+	if m.Descriptor().MediaType == images.MediaTypeDockerSchema2ManifestList {
+		m, err = manifest.LoadManifestFromList(ctx, image_to.Target(), contentStore, runtime.GOOS, runtime.GOARCH)
+		if err != nil {
+			return err
+		}
+	}
+
 	snapshot, err := session.snapshotter.Stat(ctx, activeSnapshotKey)
 	if err != nil {
 		return err
